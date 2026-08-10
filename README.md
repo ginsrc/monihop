@@ -1,7 +1,38 @@
 # MoniHop（跃屏）
 
-MoniHop 是面向 Windows 11 多显示器环境的开源桌面工具，计划提供应用打开位置管理、窗口跨屏投放、鼠标快捷切屏和异常窗口召回能力。
+MoniHop 是面向 Windows 11 多显示器环境的本地窗口调度工具。
 
-项目目前处于早期设计与工程准备阶段，尚未发布可用版本。
+## 当前状态
+
+当前仓库处于早期开发阶段。已建立 .NET 10 / WPF 工程边界，并完成本机显示器枚举纵向切片。窗口投放、鼠标切屏、应用路由和顶部投放层尚未实现。
+
+## 环境
+
+- Windows 11
+- .NET SDK 10.0.302 或兼容的 10.0 最新补丁版本
+
+## 构建
+
+```powershell
+& 'C:\Program Files\dotnet\dotnet.exe' build MoniHop.sln
+```
+
+## 测试
+
+```powershell
+& 'C:\Program Files\dotnet\dotnet.exe' test MoniHop.sln
+```
+
+## 运行
+
+```powershell
+& 'C:\Program Files\dotnet\dotnet.exe' run --project src/MoniHop.Desktop/MoniHop.Desktop.csproj
+```
+
+## 文档
 
 公开文档位于 [`docs/public/`](docs/public/README.md)。
+
+## 隐私边界
+
+MoniHop 采用本地优先设计。第一版不依赖云服务，不读取窗口内容、键盘输入、剪贴板或用户文件。
