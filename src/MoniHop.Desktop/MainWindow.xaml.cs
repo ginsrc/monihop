@@ -1,26 +1,34 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using MoniHop.Core.Displays;
+using MoniHop.Core.Windows;
 using MoniHop.Windows.Cursors;
 using MoniHop.Windows.HotKeys;
+using MoniHop.Windows.Windows;
 
 namespace MoniHop.Desktop;
 
 public partial class MainWindow : Window
 {
     private readonly CursorSwitchService _cursorSwitchService;
-    private GlobalHotKeyRegistration? _hotKeyRegistration;
+    private readonly WindowSwitchService _windowSwitchService;
+    private readonly List<GlobalHotKeyRegistration> _hotKeyRegistrations = [];
     private HwndSource? _windowSource;
+    private nint _windowHandle;
 
     public MainWindow(
         IReadOnlyList<DisplaySnapshot> displays,
-        CursorSwitchService cursorSwitchService)
+        CursorSwitchService cursorSwitchService,
+        WindowSwitchService windowSwitchService)
     {
         ArgumentNullException.ThrowIfNull(displays);
         _cursorSwitchService = cursorSwitchService ??
             throw new ArgumentNullException(nameof(cursorSwitchService));
+        _windowSwitchService = windowSwitchService ??
+            throw new ArgumentNullException(nameof(windowSwitchService));
 
         Displays = new ObservableCollection<DisplayItem>(
             displays.Select((display, index) => new DisplayItem(
@@ -39,25 +47,23 @@ public partial class MainWindow : Window
     {
         base.OnSourceInitialized(e);
 
-        var windowHandle = new WindowInteropHelper(this).Handle;
-        _windowSource = HwndSource.FromHwnd(windowHandle);
+        _windowHandle = new WindowInteropHelper(this).Handle;
+        _windowSource = HwndSource.FromHwnd(_windowHandle);
         _windowSource.AddHook(WindowHook);
 
-        try
-        {
-            _hotKeyRegistration = GlobalHotKeyRegistration.Register(windowHandle);
-            HotKeyStatusText.Text = "已启用";
-        }
-        catch (Win32Exception)
-        {
-            HotKeyStatusText.Text = "快捷键不可用";
-        }
+        RegisterHotKey(GlobalHotKeyAction.CursorSwitch, CursorHotKeyStatusText);
+        RegisterHotKey(GlobalHotKeyAction.WindowPrevious, WindowPreviousHotKeyStatusText);
+        RegisterHotKey(GlobalHotKeyAction.WindowNext, WindowNextHotKeyStatusText);
     }
 
     protected override void OnClosed(EventArgs e)
     {
         _windowSource?.RemoveHook(WindowHook);
-        _hotKeyRegistration?.Dispose();
+        foreach (var registration in _hotKeyRegistrations)
+        {
+            registration.Dispose();
+        }
+
         base.OnClosed(e);
     }
 
@@ -68,29 +74,76 @@ public partial class MainWindow : Window
         nint longParameter,
         ref bool handled)
     {
-        if (message != GlobalHotKeyRegistration.HotKeyMessage ||
-            wordParameter != GlobalHotKeyRegistration.CursorSwitchId)
+        if (message != GlobalHotKeyRegistration.HotKeyMessage)
         {
             return 0;
         }
 
-        handled = true;
+        switch ((int)wordParameter)
+        {
+            case GlobalHotKeyRegistration.CursorSwitchId:
+                handled = true;
+                RunCursorSwitch();
+                break;
+            case GlobalHotKeyRegistration.WindowPreviousId:
+                handled = true;
+                RunWindowSwitch(DisplayDirection.Previous, WindowPreviousHotKeyStatusText);
+                break;
+            case GlobalHotKeyRegistration.WindowNextId:
+                handled = true;
+                RunWindowSwitch(DisplayDirection.Next, WindowNextHotKeyStatusText);
+                break;
+        }
 
+        return 0;
+    }
+
+    private void RegisterHotKey(GlobalHotKeyAction action, TextBlock statusText)
+    {
         try
         {
-            HotKeyStatusText.Text = _cursorSwitchService.SwitchNext() switch
+            _hotKeyRegistrations.Add(GlobalHotKeyRegistration.Register(_windowHandle, action));
+            statusText.Text = "已启用";
+        }
+        catch (Win32Exception)
+        {
+            statusText.Text = "快捷键不可用";
+        }
+    }
+
+    private void RunCursorSwitch()
+    {
+        try
+        {
+            CursorHotKeyStatusText.Text = _cursorSwitchService.SwitchNext() switch
             {
-                CursorSwitchResult.Moved => "已启用",
+                CursorSwitchResult.Moved => "已切换",
                 CursorSwitchResult.NoTarget => "仅连接一块显示器",
                 _ => "切换失败",
             };
         }
         catch (Win32Exception)
         {
-            HotKeyStatusText.Text = "切换失败";
+            CursorHotKeyStatusText.Text = "切换失败";
         }
+    }
 
-        return 0;
+    private void RunWindowSwitch(DisplayDirection direction, TextBlock statusText)
+    {
+        try
+        {
+            statusText.Text = _windowSwitchService.Switch(direction, _windowHandle) switch
+            {
+                WindowSwitchResult.Moved => "已移动",
+                WindowSwitchResult.NoTarget => "仅连接一块显示器",
+                WindowSwitchResult.NoWindow => "当前窗口不可移动",
+                _ => "移动失败",
+            };
+        }
+        catch (Win32Exception)
+        {
+            statusText.Text = "移动失败";
+        }
     }
 
     public sealed record DisplayItem(
