@@ -13,6 +13,8 @@
     <Grid Margin="32">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="18" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="24" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
@@ -26,7 +28,31 @@
                        Text="已连接显示器" />
         </StackPanel>
 
-        <ListBox Grid.Row="2"
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="16" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock FontWeight="SemiBold"
+                       VerticalAlignment="Center"
+                       Text="鼠标切屏" />
+            <TextBlock Grid.Column="2"
+                       Padding="8,4"
+                       VerticalAlignment="Center"
+                       Foreground="#FF444444"
+                       Background="#FFEDEDED"
+                       Text="Ctrl + Alt + M" />
+            <TextBlock x:Name="HotKeyStatusText"
+                       Grid.Column="4"
+                       VerticalAlignment="Center"
+                       Foreground="{StaticResource AccentBrush}"
+                       Text="正在注册" />
+        </Grid>
+
+        <ListBox Grid.Row="4"
                  ItemsSource="{Binding Displays}"
                  BorderThickness="0"
                  Background="Transparent"

@@ -1,4 +1,5 @@
 using System.Windows;
+using MoniHop.Windows.Cursors;
 using MoniHop.Windows.Displays;
 
 namespace MoniHop.Desktop;
@@ -11,8 +12,13 @@ public partial class App : Application
 
         try
         {
-            var displays = new NativeDisplayCatalog().ReadAll();
-            new MainWindow(displays).Show();
+            var displayCatalog = new NativeDisplayCatalog();
+            var displays = displayCatalog.ReadAll();
+            var cursorSwitchService = new CursorSwitchService(
+                displayCatalog,
+                new NativeCursorController());
+
+            new MainWindow(displays, cursorSwitchService).Show();
         }
         catch (Exception exception)
         {
