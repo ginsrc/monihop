@@ -5,6 +5,8 @@ using System.Windows.Controls;
 using System.Windows.Interop;
 using MoniHop.Core.Displays;
 using MoniHop.Core.Windows;
+using MoniHop.Desktop.Models;
+using MoniHop.Desktop.Views;
 using MoniHop.Windows.Cursors;
 using MoniHop.Windows.HotKeys;
 using MoniHop.Windows.Windows;
@@ -16,6 +18,7 @@ public partial class MainWindow : Window
     private readonly CursorSwitchService _cursorSwitchService;
     private readonly WindowSwitchService _windowSwitchService;
     private readonly List<GlobalHotKeyRegistration> _hotKeyRegistrations = [];
+    private readonly IReadOnlyList<NavigationItem> _navigationItems;
     private HwndSource? _windowSource;
     private nint _windowHandle;
 
@@ -25,35 +28,48 @@ public partial class MainWindow : Window
         WindowSwitchService windowSwitchService)
     {
         ArgumentNullException.ThrowIfNull(displays);
-        _cursorSwitchService = cursorSwitchService ??
-            throw new ArgumentNullException(nameof(cursorSwitchService));
-        _windowSwitchService = windowSwitchService ??
-            throw new ArgumentNullException(nameof(windowSwitchService));
+        _cursorSwitchService = cursorSwitchService ?? throw new ArgumentNullException(nameof(cursorSwitchService));
+        _windowSwitchService = windowSwitchService ?? throw new ArgumentNullException(nameof(windowSwitchService));
 
-        Displays = new ObservableCollection<DisplayItem>(
-            displays.Select((display, index) => new DisplayItem(
-                $"显示器 {index + 1}",
-                display.DeviceName,
-                $"{display.Bounds.Width} × {display.Bounds.Height}",
-                display.IsPrimary ? Visibility.Visible : Visibility.Collapsed)));
+        CursorHotKey = new HotKeyStatusViewModel("鼠标切到下一屏", "Ctrl + Alt + M");
+        WindowPreviousHotKey = new HotKeyStatusViewModel("当前窗口移到上一屏", "Ctrl + Alt + Shift + Left");
+        WindowNextHotKey = new HotKeyStatusViewModel("当前窗口移到下一屏", "Ctrl + Alt + Shift + Right");
+        HotKeys = [CursorHotKey, WindowPreviousHotKey, WindowNextHotKey];
 
-        DataContext = this;
         InitializeComponent();
+
+        _navigationItems =
+        [
+            new("显示器", "\uE7F4", new DisplaysPage(displays)),
+            new("窗口投放", "\uE8A7", new ProjectionPage()),
+            new("应用投放", "\uE8FD", new ApplicationProjectionPage(displays)),
+            new("快捷键", "\uE765", new HotKeysPage(HotKeys)),
+            new("行为与恢复", "\uE713", new BehaviorPage()),
+            new("关于与诊断", "\uE946", new AboutPage()),
+        ];
+
+        NavigationList.ItemsSource = _navigationItems;
+        NavigationList.SelectedIndex = 0;
     }
 
-    public ObservableCollection<DisplayItem> Displays { get; }
+    public ObservableCollection<HotKeyStatusViewModel> HotKeys { get; }
+
+    public HotKeyStatusViewModel CursorHotKey { get; }
+
+    public HotKeyStatusViewModel WindowPreviousHotKey { get; }
+
+    public HotKeyStatusViewModel WindowNextHotKey { get; }
 
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-
         _windowHandle = new WindowInteropHelper(this).Handle;
         _windowSource = HwndSource.FromHwnd(_windowHandle);
         _windowSource.AddHook(WindowHook);
 
-        RegisterHotKey(GlobalHotKeyAction.CursorSwitch, CursorHotKeyStatusText);
-        RegisterHotKey(GlobalHotKeyAction.WindowPrevious, WindowPreviousHotKeyStatusText);
-        RegisterHotKey(GlobalHotKeyAction.WindowNext, WindowNextHotKeyStatusText);
+        RegisterHotKey(GlobalHotKeyAction.CursorSwitch, CursorHotKey);
+        RegisterHotKey(GlobalHotKeyAction.WindowPrevious, WindowPreviousHotKey);
+        RegisterHotKey(GlobalHotKeyAction.WindowNext, WindowNextHotKey);
     }
 
     protected override void OnClosed(EventArgs e)
@@ -67,12 +83,15 @@ public partial class MainWindow : Window
         base.OnClosed(e);
     }
 
-    private nint WindowHook(
-        nint windowHandle,
-        int message,
-        nint wordParameter,
-        nint longParameter,
-        ref bool handled)
+    private void NavigationList_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (NavigationList.SelectedItem is NavigationItem selected)
+        {
+            PageHost.Content = selected.Page;
+        }
+    }
+
+    private nint WindowHook(nint windowHandle, int message, nint wordParameter, nint longParameter, ref bool handled)
     {
         if (message != GlobalHotKeyRegistration.HotKeyMessage)
         {
@@ -87,27 +106,27 @@ public partial class MainWindow : Window
                 break;
             case GlobalHotKeyRegistration.WindowPreviousId:
                 handled = true;
-                RunWindowSwitch(DisplayDirection.Previous, WindowPreviousHotKeyStatusText);
+                RunWindowSwitch(DisplayDirection.Previous, WindowPreviousHotKey);
                 break;
             case GlobalHotKeyRegistration.WindowNextId:
                 handled = true;
-                RunWindowSwitch(DisplayDirection.Next, WindowNextHotKeyStatusText);
+                RunWindowSwitch(DisplayDirection.Next, WindowNextHotKey);
                 break;
         }
 
         return 0;
     }
 
-    private void RegisterHotKey(GlobalHotKeyAction action, TextBlock statusText)
+    private void RegisterHotKey(GlobalHotKeyAction action, HotKeyStatusViewModel status)
     {
         try
         {
             _hotKeyRegistrations.Add(GlobalHotKeyRegistration.Register(_windowHandle, action));
-            statusText.Text = "已启用";
+            status.Update(isAvailable: true);
         }
         catch (Win32Exception)
         {
-            statusText.Text = "快捷键不可用";
+            status.Update(isAvailable: false);
         }
     }
 
@@ -115,40 +134,36 @@ public partial class MainWindow : Window
     {
         try
         {
-            CursorHotKeyStatusText.Text = _cursorSwitchService.SwitchNext() switch
+            CursorHotKey.UpdateStatus(_cursorSwitchService.SwitchNext() switch
             {
                 CursorSwitchResult.Moved => "已切换",
                 CursorSwitchResult.NoTarget => "仅连接一块显示器",
                 _ => "切换失败",
-            };
+            });
         }
         catch (Win32Exception)
         {
-            CursorHotKeyStatusText.Text = "切换失败";
+            CursorHotKey.UpdateStatus("切换失败");
         }
     }
 
-    private void RunWindowSwitch(DisplayDirection direction, TextBlock statusText)
+    private void RunWindowSwitch(DisplayDirection direction, HotKeyStatusViewModel status)
     {
         try
         {
-            statusText.Text = _windowSwitchService.Switch(direction, _windowHandle) switch
+            status.UpdateStatus(_windowSwitchService.Switch(direction, _windowHandle) switch
             {
                 WindowSwitchResult.Moved => "已移动",
                 WindowSwitchResult.NoTarget => "仅连接一块显示器",
                 WindowSwitchResult.NoWindow => "当前窗口不可移动",
                 _ => "移动失败",
-            };
+            });
         }
         catch (Win32Exception)
         {
-            statusText.Text = "移动失败";
+            status.UpdateStatus("移动失败");
         }
     }
 
-    public sealed record DisplayItem(
-        string DisplayName,
-        string DeviceName,
-        string ResolutionText,
-        Visibility PrimaryVisibility);
+    private sealed record NavigationItem(string Label, string Icon, UserControl Page);
 }
