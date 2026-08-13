@@ -15,7 +15,8 @@ public sealed record DisplayViewModel(
     string Scale = "未知",
     string Orientation = "未知",
     string PhysicalSize = "未知",
-    string PhysicalSizeDetail = "未知")
+    string PhysicalSizeDetail = "未知",
+    string ApplicationRules = "未配置")
 {
     public static IReadOnlyList<DisplayViewModel> CreateAll(
         IReadOnlyList<DisplaySnapshot> displays)

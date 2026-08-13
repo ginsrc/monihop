@@ -5,7 +5,8 @@ namespace MoniHop.Desktop.Settings;
 public sealed record MoniHopPaths(
     string DataDirectory,
     string ConfigurationDirectory,
-    string DisplayProfilesFile)
+    string DisplayProfilesFile,
+    string ApplicationProjectionFile)
 {
     public static MoniHopPaths CreateDefault()
     {
@@ -15,6 +16,7 @@ public sealed record MoniHopPaths(
         return new MoniHopPaths(
             dataDirectory,
             configurationDirectory,
-            Path.Combine(configurationDirectory, "display-profiles.json"));
+            Path.Combine(configurationDirectory, "display-profiles.json"),
+            Path.Combine(configurationDirectory, "application-projection.json"));
     }
 }

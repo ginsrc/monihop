@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Text;
 using MoniHop.Core.Displays;
 
 namespace MoniHop.Windows.Windows;
@@ -8,7 +9,10 @@ public sealed class NativeWindowController : IWindowController
 {
     private const uint GetWindowOwner = 4;
     private const int ExtendedStyleIndex = -20;
+    private const int StyleIndex = -16;
+    private const int CaptionStyle = 0x00C00000;
     private const int ToolWindowStyle = 0x00000080;
+    private const int NoActivateWindowStyle = 0x08000000;
     private const uint NoSizePositionFlag = 0x0001;
     private const uint NoZOrderPositionFlag = 0x0004;
     private const uint NoActivatePositionFlag = 0x0010;
@@ -17,12 +21,15 @@ public sealed class NativeWindowController : IWindowController
 
     public WindowPlacementSnapshot? ReadPlacement(nint windowHandle)
     {
-        if (windowHandle == 0 ||
-            !IsWindow(windowHandle) ||
-            !IsWindowVisible(windowHandle) ||
-            IsIconic(windowHandle) ||
-            GetWindow(windowHandle, GetWindowOwner) != 0 ||
-            (GetWindowLong(windowHandle, ExtendedStyleIndex) & ToolWindowStyle) != 0)
+        if (windowHandle == 0 || !IsWindow(windowHandle) ||
+            !IsApplicationWindowCandidate(
+                IsWindowVisible(windowHandle),
+                IsIconic(windowHandle),
+                GetWindowOwnerHandle(windowHandle),
+                GetParent(windowHandle),
+                GetWindowLongNative(windowHandle, StyleIndex),
+                GetWindowLongNative(windowHandle, ExtendedStyleIndex),
+                GetClassName(windowHandle)))
         {
             return null;
         }
@@ -43,6 +50,20 @@ public sealed class NativeWindowController : IWindowController
             windowRect.ToPixelRect(),
             placement.NormalPosition.ToPixelRect());
     }
+
+    public static bool IsApplicationWindowCandidate(
+        bool isVisible,
+        bool isIconic,
+        nint owner,
+        nint parent,
+        int windowStyle,
+        int extendedStyle,
+        string className) =>
+        isVisible && !isIconic && owner == 0 && parent == 0 &&
+        (windowStyle & CaptionStyle) == CaptionStyle &&
+        (extendedStyle & (ToolWindowStyle | NoActivateWindowStyle)) == 0 &&
+        !string.Equals(className, "#32768", StringComparison.Ordinal) &&
+        !string.Equals(className, "Windows.UI.Core.CoreWindow", StringComparison.OrdinalIgnoreCase);
 
     public void MoveWindow(nint windowHandle, WindowPlacementSnapshot placement)
     {
@@ -106,11 +127,25 @@ public sealed class NativeWindowController : IWindowController
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool IsIconic(nint windowHandle);
 
+    [DllImport("user32.dll", EntryPoint = "GetWindow")]
+    private static extern nint GetWindowOwnerHandle(nint windowHandle, uint command);
+
+    private static nint GetWindowOwnerHandle(nint windowHandle) => GetWindowOwnerHandle(windowHandle, GetWindowOwner);
+
     [DllImport("user32.dll")]
-    private static extern nint GetWindow(nint windowHandle, uint command);
+    private static extern nint GetParent(nint windowHandle);
 
     [DllImport("user32.dll", EntryPoint = "GetWindowLongW")]
-    private static extern int GetWindowLong(nint windowHandle, int index);
+    private static extern int GetWindowLongNative(nint windowHandle, int index);
+
+    private static string GetClassName(nint windowHandle)
+    {
+        var buffer = new StringBuilder(256);
+        return GetClassNameNative(windowHandle, buffer, buffer.Capacity) == 0 ? string.Empty : buffer.ToString();
+    }
+
+    [DllImport("user32.dll", EntryPoint = "GetClassNameW", CharSet = CharSet.Unicode)]
+    private static extern int GetClassNameNative(nint windowHandle, StringBuilder className, int maxCount);
 
     [DllImport("user32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

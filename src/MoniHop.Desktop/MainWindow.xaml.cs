@@ -7,10 +7,12 @@ using System.Windows.Interop;
 using System.Windows.Threading;
 using MoniHop.Core.Displays;
 using MoniHop.Core.Windows;
+using MoniHop.Desktop.ApplicationProjection;
 using MoniHop.Desktop.Models;
 using MoniHop.Desktop.Settings;
 using MoniHop.Desktop.Views;
 using MoniHop.Windows.Cursors;
+using MoniHop.Windows.ApplicationProjection;
 using MoniHop.Windows.HotKeys;
 using MoniHop.Windows.Windows;
 
@@ -24,6 +26,8 @@ public partial class MainWindow : Window
     private readonly IReadOnlyList<NavigationItem> _navigationItems;
     private readonly DisplayProfileService _displayProfileService;
     private readonly DisplaysPage _displaysPage;
+    private readonly ApplicationProjectionPage _applicationProjectionPage;
+    private readonly ApplicationProjectionRuntime _applicationProjectionRuntime;
     private readonly DispatcherTimer _displayRefreshTimer;
     private HwndSource? _windowSource;
     private nint _windowHandle;
@@ -33,12 +37,20 @@ public partial class MainWindow : Window
         CursorSwitchService cursorSwitchService,
         WindowSwitchService windowSwitchService,
         DisplayProfileService displayProfileService,
+        ApplicationProjectionSettingsService applicationProjectionSettings,
+        IApplicationWindowController applicationWindowController,
+        IInstalledApplicationCatalog installedApplicationCatalog,
+        ApplicationProjectionRuntime applicationProjectionRuntime,
         MoniHopPaths paths)
     {
         ArgumentNullException.ThrowIfNull(displays);
         _cursorSwitchService = cursorSwitchService ?? throw new ArgumentNullException(nameof(cursorSwitchService));
         _windowSwitchService = windowSwitchService ?? throw new ArgumentNullException(nameof(windowSwitchService));
         _displayProfileService = displayProfileService ?? throw new ArgumentNullException(nameof(displayProfileService));
+        ArgumentNullException.ThrowIfNull(applicationProjectionSettings);
+        ArgumentNullException.ThrowIfNull(applicationWindowController);
+        ArgumentNullException.ThrowIfNull(installedApplicationCatalog);
+        _applicationProjectionRuntime = applicationProjectionRuntime ?? throw new ArgumentNullException(nameof(applicationProjectionRuntime));
         ArgumentNullException.ThrowIfNull(paths);
 
         CursorHotKey = new HotKeyStatusViewModel("鼠标切到下一屏", "Ctrl + Alt + M");
@@ -57,12 +69,18 @@ public partial class MainWindow : Window
             IsEnabled = false,
         };
 
-        _displaysPage = new DisplaysPage(_displayProfileService);
+        _displaysPage = new DisplaysPage(_displayProfileService, applicationProjectionSettings);
+        _applicationProjectionPage = new ApplicationProjectionPage(
+            applicationProjectionSettings,
+            _displayProfileService,
+            applicationWindowController,
+            installedApplicationCatalog);
+        _applicationProjectionRuntime.ProjectionCompleted += ApplicationProjectionRuntime_OnProjectionCompleted;
         _navigationItems =
         [
             new("显示器", "\uE7F4", _displaysPage),
             new("窗口投放", "\uE8A7", new ProjectionPage()),
-            new("应用投放", "\uE8FD", new ApplicationProjectionPage(displays)),
+            new("应用投放", "\uE8FD", _applicationProjectionPage),
             new("快捷键", "\uE765", new HotKeysPage(HotKeys)),
             new("行为与恢复", "\uE713", new BehaviorPage()),
             new("关于与诊断", "\uE946", new AboutPage(paths)),
@@ -95,6 +113,9 @@ public partial class MainWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _displayRefreshTimer.Stop();
+        _applicationProjectionRuntime.ProjectionCompleted -= ApplicationProjectionRuntime_OnProjectionCompleted;
+        _applicationProjectionRuntime.Dispose();
+        _displaysPage.Dispose();
         _windowSource?.RemoveHook(WindowHook);
         foreach (var registration in _hotKeyRegistrations)
         {
@@ -162,12 +183,18 @@ public partial class MainWindow : Window
         {
             _displayProfileService.Refresh();
             _displaysPage.Refresh();
+            _applicationProjectionPage.Refresh();
         }
         catch (Exception exception) when (exception is Win32Exception or IOException or UnauthorizedAccessException)
         {
             _displaysPage.ShowRefreshFailure(exception.Message);
         }
     }
+
+    private void ApplicationProjectionRuntime_OnProjectionCompleted(
+        object? sender,
+        ApplicationProjectionRuntimeResult result) =>
+        _applicationProjectionPage.ShowRuntimeResult(result);
 
     private void RegisterHotKey(GlobalHotKeyAction action, HotKeyStatusViewModel status)
     {

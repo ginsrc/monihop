@@ -8,14 +8,20 @@ using MoniHop.Desktop.Settings;
 
 namespace MoniHop.Desktop.Views;
 
-public partial class DisplaysPage : UserControl
+public partial class DisplaysPage : UserControl, IDisposable
 {
     private readonly DisplayProfileService _profileService;
+    private readonly ApplicationProjectionSettingsService _applicationProjectionSettings;
 
-    public DisplaysPage(DisplayProfileService profileService)
+    public DisplaysPage(
+        DisplayProfileService profileService,
+        ApplicationProjectionSettingsService applicationProjectionSettings)
     {
         InitializeComponent();
         _profileService = profileService ?? throw new ArgumentNullException(nameof(profileService));
+        _applicationProjectionSettings = applicationProjectionSettings ??
+            throw new ArgumentNullException(nameof(applicationProjectionSettings));
+        _applicationProjectionSettings.Changed += ApplicationProjectionSettings_OnChanged;
         ViewModel = new DisplayHistoryViewModel();
         DataContext = this;
         Refresh();
@@ -29,9 +35,14 @@ public partial class DisplaysPage : UserControl
 
     public void Refresh()
     {
-        ViewModel.Refresh(_profileService.States);
+        ViewModel.Refresh(_profileService.States, _applicationProjectionSettings.Current.Rules);
         RefreshStatusText.Text = $"已实时更新 · 当前连接 {ConnectedDisplays.Count} 台显示器";
     }
+
+    public void Dispose() =>
+        _applicationProjectionSettings.Changed -= ApplicationProjectionSettings_OnChanged;
+
+    private void ApplicationProjectionSettings_OnChanged(object? sender, EventArgs e) => Refresh();
 
     public void ShowRefreshFailure(string message)
     {

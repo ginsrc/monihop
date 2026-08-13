@@ -1,5 +1,7 @@
 using System.Windows;
+using MoniHop.Desktop.ApplicationProjection;
 using MoniHop.Desktop.Settings;
+using MoniHop.Windows.ApplicationProjection;
 using MoniHop.Windows.Cursors;
 using MoniHop.Windows.Displays;
 using MoniHop.Windows.Windows;
@@ -27,12 +29,25 @@ public partial class App : Application
             var windowSwitchService = new WindowSwitchService(
                 displayCatalog,
                 new NativeWindowController());
+            var applicationWindowController = new NativeApplicationWindowController();
+            var installedApplicationCatalog = new NativeInstalledApplicationCatalog();
+            var applicationProjectionSettings = new ApplicationProjectionSettingsService(
+                new JsonApplicationProjectionStore(paths.ApplicationProjectionFile));
+            var applicationProjectionRuntime = new ApplicationProjectionRuntime(
+                new NativeWindowEventSource(),
+                applicationWindowController,
+                displayCatalog,
+                applicationProjectionSettings);
 
             new MainWindow(
                 displays,
                 cursorSwitchService,
                 windowSwitchService,
                 profileService,
+                applicationProjectionSettings,
+                applicationWindowController,
+                installedApplicationCatalog,
+                applicationProjectionRuntime,
                 paths).Show();
         }
         catch (Exception exception)

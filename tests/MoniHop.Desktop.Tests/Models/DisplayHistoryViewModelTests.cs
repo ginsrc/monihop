@@ -1,5 +1,7 @@
 using MoniHop.Core.Displays;
+using MoniHop.Core.ApplicationProjection;
 using MoniHop.Desktop.Models;
+using ProjectionApplicationIdentity = MoniHop.Core.ApplicationProjection.ApplicationIdentity;
 
 namespace MoniHop.Desktop.Tests.Models;
 
@@ -27,6 +29,34 @@ public sealed class DisplayHistoryViewModelTests
         Assert.Contains(viewModel.AllDisplays, display =>
             display.StableId == "stable-b" && display.ConnectionStatus == "未连接");
     }
+
+    [Fact]
+    public void Refresh_ReportsRulesAssociatedByStableDisplayId()
+    {
+        var viewModel = new DisplayHistoryViewModel();
+        var states = DisplayProfileRegistry.Reconcile(
+            [],
+            [Display("DISPLAY1", "stable-a"), Display("DISPLAY2", "stable-b")],
+            DateTimeOffset.UtcNow);
+        var rules = new[]
+        {
+            Rule(@"C:\Apps\one.exe", "stable-b", true),
+            Rule(@"C:\Apps\two.exe", "stable-b", false),
+        };
+
+        viewModel.Refresh(states, rules);
+
+        Assert.Equal("未配置", viewModel.AllDisplays[0].ApplicationRules);
+        Assert.Equal("2 条", viewModel.AllDisplays[1].ApplicationRules);
+    }
+
+    private static ApplicationProjectionRule Rule(string path, string target, bool isEnabled) =>
+        new(
+            new ProjectionApplicationIdentity(ApplicationIdentityKind.ExecutablePath, path),
+            Path.GetFileNameWithoutExtension(path),
+            target,
+            ProjectionLayout.KeepSize,
+            isEnabled);
 
     private static DisplaySnapshot Display(string deviceName, string stableId) =>
         new(
