@@ -14,8 +14,8 @@
         <Border Margin="0,18,0,0" Style="{StaticResource SurfaceSectionStyle}"><StackPanel>
             <TextBlock Style="{StaticResource SectionTitleStyle}" Text="本地文件位置" />
             <Grid Margin="0,14,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="执行目录"/><TextBlock Grid.Column="1" Text="{Binding ExecutableDirectory}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ExecutableDirectory}"/></Grid>
-            <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="数据目录"/><TextBlock Grid.Column="1" Foreground="{StaticResource DisabledBrush}" Text="尚未创建"/></Grid>
-            <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="配置目录"/><TextBlock Grid.Column="1" Foreground="{StaticResource DisabledBrush}" Text="尚未创建"/></Grid>
+            <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="数据目录"/><TextBlock Grid.Column="1" Text="{Binding DataDirectory}" TextTrimming="CharacterEllipsis" ToolTip="{Binding DataDirectory}"/></Grid>
+            <Grid Margin="0,10,0,0"><Grid.ColumnDefinitions><ColumnDefinition Width="140"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="配置目录"/><TextBlock Grid.Column="1" Text="{Binding ConfigurationDirectory}" TextTrimming="CharacterEllipsis" ToolTip="{Binding ConfigurationDirectory}"/></Grid>
         </StackPanel></Border>
     </StackPanel></ScrollViewer>
 </UserControl>

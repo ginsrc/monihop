@@ -10,8 +10,10 @@ public sealed class DisplayViewModelTests
     {
         var displays = new[]
         {
-            CreateDisplay("\\\\.\\DISPLAY1", "Internal display", 1920, 1200, true),
-            CreateDisplay("\\\\.\\DISPLAY2", "External display", 2560, 1440, false),
+            CreateDisplay("\\\\.\\DISPLAY1", "Internal display", 1920, 1200, true,
+                60, 125, DisplayOrientation.Landscape, 310, 174),
+            CreateDisplay("\\\\.\\DISPLAY2", "External display", 3200, 1800, false,
+                scalePercent: 100, resolutionWidth: 2560, resolutionHeight: 1440),
         };
 
         var result = DisplayViewModel.CreateAll(displays);
@@ -24,6 +26,11 @@ public sealed class DisplayViewModelTests
                 Assert.Equal("Internal display", first.Name);
                 Assert.Equal("1920 × 1200", first.Resolution);
                 Assert.Equal("Windows 主显示器", first.PrimaryStatus);
+                Assert.Equal("60 Hz", first.RefreshRate);
+                Assert.Equal("125%", first.Scale);
+                Assert.Equal("横向", first.Orientation);
+                Assert.Equal("14.0 英寸", first.PhysicalSize);
+                Assert.Equal("310 × 174 mm", first.PhysicalSizeDetail);
             },
             second =>
             {
@@ -39,11 +46,25 @@ public sealed class DisplayViewModelTests
         string displayName,
         int width,
         int height,
-        bool isPrimary) =>
+        bool isPrimary,
+        int? refreshRateHz = null,
+        int? scalePercent = null,
+        DisplayOrientation orientation = DisplayOrientation.Unknown,
+        int? physicalWidthMillimeters = null,
+        int? physicalHeightMillimeters = null,
+        int? resolutionWidth = null,
+        int? resolutionHeight = null) =>
         new(
             deviceName,
             displayName,
             new PixelRect(0, 0, width, height),
             new PixelRect(0, 0, width, height - 40),
-            isPrimary);
+            isPrimary,
+            refreshRateHz: refreshRateHz,
+            scalePercent: scalePercent,
+            orientation: orientation,
+            physicalWidthMillimeters: physicalWidthMillimeters,
+            physicalHeightMillimeters: physicalHeightMillimeters,
+            resolutionWidth: resolutionWidth,
+            resolutionHeight: resolutionHeight);
 }

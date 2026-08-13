@@ -38,4 +38,59 @@ public sealed class DisplaySnapshotTests
                 invalidWorkingArea,
                 true));
     }
+
+    [Fact]
+    public void DisplaySnapshot_UsesStableIdWhenProvided()
+    {
+        var bounds = new PixelRect(0, 0, 1920, 1080);
+
+        var snapshot = new DisplaySnapshot(
+            "\\\\.\\DISPLAY1",
+            "Display 1",
+            bounds,
+            bounds,
+            true,
+            "MONITOR#ABC#123");
+
+        Assert.Equal("MONITOR#ABC#123", snapshot.StableId);
+    }
+
+    [Fact]
+    public void DisplaySnapshot_StoresDisplayMetrics()
+    {
+        var bounds = new PixelRect(0, 0, 2560, 1440);
+
+        var snapshot = new DisplaySnapshot(
+            "\\\\.\\DISPLAY1",
+            "Display 1",
+            bounds,
+            bounds,
+            true,
+            refreshRateHz: 144,
+            scalePercent: 150,
+            orientation: DisplayOrientation.Landscape,
+            physicalWidthMillimeters: 600,
+            physicalHeightMillimeters: 340,
+            resolutionWidth: 2560,
+            resolutionHeight: 1440);
+
+        Assert.Equal(2560, snapshot.ResolutionWidth);
+        Assert.Equal(1440, snapshot.ResolutionHeight);
+        Assert.Equal(144, snapshot.RefreshRateHz);
+        Assert.Equal(150, snapshot.ScalePercent);
+        Assert.Equal(DisplayOrientation.Landscape, snapshot.Orientation);
+        Assert.Equal(600, snapshot.PhysicalWidthMillimeters);
+        Assert.Equal(340, snapshot.PhysicalHeightMillimeters);
+    }
+
+    [Fact]
+    public void DisplaySnapshot_FallsBackToBoundsWhenNativeResolutionIsUnavailable()
+    {
+        var bounds = new PixelRect(0, 0, 1920, 1200);
+
+        var snapshot = new DisplaySnapshot("DISPLAY1", "Display 1", bounds, bounds, true);
+
+        Assert.Equal(1920, snapshot.ResolutionWidth);
+        Assert.Equal(1200, snapshot.ResolutionHeight);
+    }
 }

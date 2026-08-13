@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:MoniHop.Desktop">
     <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#F5F6F8" />
     <SolidColorBrush x:Key="NavigationBackgroundBrush" Color="#ECEEF2" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF" />
@@ -16,4 +17,6 @@
     <SolidColorBrush x:Key="ErrorBrush" Color="#C42B1C" />
     <SolidColorBrush x:Key="ErrorSubtleBrush" Color="#FDEBE9" />
     <SolidColorBrush x:Key="DisabledBrush" Color="#8B9099" />
+    <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
 </ResourceDictionary>

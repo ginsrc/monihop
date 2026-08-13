@@ -1,11 +1,14 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Threading;
 using MoniHop.Core.Displays;
 using MoniHop.Core.Windows;
 using MoniHop.Desktop.Models;
+using MoniHop.Desktop.Settings;
 using MoniHop.Desktop.Views;
 using MoniHop.Windows.Cursors;
 using MoniHop.Windows.HotKeys;
@@ -19,17 +22,24 @@ public partial class MainWindow : Window
     private readonly WindowSwitchService _windowSwitchService;
     private readonly List<GlobalHotKeyRegistration> _hotKeyRegistrations = [];
     private readonly IReadOnlyList<NavigationItem> _navigationItems;
+    private readonly DisplayProfileService _displayProfileService;
+    private readonly DisplaysPage _displaysPage;
+    private readonly DispatcherTimer _displayRefreshTimer;
     private HwndSource? _windowSource;
     private nint _windowHandle;
 
     public MainWindow(
         IReadOnlyList<DisplaySnapshot> displays,
         CursorSwitchService cursorSwitchService,
-        WindowSwitchService windowSwitchService)
+        WindowSwitchService windowSwitchService,
+        DisplayProfileService displayProfileService,
+        MoniHopPaths paths)
     {
         ArgumentNullException.ThrowIfNull(displays);
         _cursorSwitchService = cursorSwitchService ?? throw new ArgumentNullException(nameof(cursorSwitchService));
         _windowSwitchService = windowSwitchService ?? throw new ArgumentNullException(nameof(windowSwitchService));
+        _displayProfileService = displayProfileService ?? throw new ArgumentNullException(nameof(displayProfileService));
+        ArgumentNullException.ThrowIfNull(paths);
 
         CursorHotKey = new HotKeyStatusViewModel("鼠标切到下一屏", "Ctrl + Alt + M");
         WindowPreviousHotKey = new HotKeyStatusViewModel("当前窗口移到上一屏", "Ctrl + Alt + Shift + Left");
@@ -38,14 +48,24 @@ public partial class MainWindow : Window
 
         InitializeComponent();
 
+        _displayRefreshTimer = new DispatcherTimer(
+            TimeSpan.FromMilliseconds(250),
+            DispatcherPriority.Background,
+            DisplayRefreshTimer_OnTick,
+            Dispatcher)
+        {
+            IsEnabled = false,
+        };
+
+        _displaysPage = new DisplaysPage(_displayProfileService);
         _navigationItems =
         [
-            new("显示器", "\uE7F4", new DisplaysPage(displays)),
+            new("显示器", "\uE7F4", _displaysPage),
             new("窗口投放", "\uE8A7", new ProjectionPage()),
             new("应用投放", "\uE8FD", new ApplicationProjectionPage(displays)),
             new("快捷键", "\uE765", new HotKeysPage(HotKeys)),
             new("行为与恢复", "\uE713", new BehaviorPage()),
-            new("关于与诊断", "\uE946", new AboutPage()),
+            new("关于与诊断", "\uE946", new AboutPage(paths)),
         ];
 
         NavigationList.ItemsSource = _navigationItems;
@@ -74,6 +94,7 @@ public partial class MainWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        _displayRefreshTimer.Stop();
         _windowSource?.RemoveHook(WindowHook);
         foreach (var registration in _hotKeyRegistrations)
         {
@@ -93,6 +114,12 @@ public partial class MainWindow : Window
 
     private nint WindowHook(nint windowHandle, int message, nint wordParameter, nint longParameter, ref bool handled)
     {
+        if (DisplayChangeMessage.RequiresRefresh(message))
+        {
+            ScheduleDisplayRefresh();
+            return 0;
+        }
+
         if (message != GlobalHotKeyRegistration.HotKeyMessage)
         {
             return 0;
@@ -115,6 +142,31 @@ public partial class MainWindow : Window
         }
 
         return 0;
+    }
+
+    private void ScheduleDisplayRefresh()
+    {
+        _displayRefreshTimer.Stop();
+        _displayRefreshTimer.Start();
+    }
+
+    private void DisplayRefreshTimer_OnTick(object? sender, EventArgs e)
+    {
+        _displayRefreshTimer.Stop();
+        RefreshDisplays();
+    }
+
+    private void RefreshDisplays()
+    {
+        try
+        {
+            _displayProfileService.Refresh();
+            _displaysPage.Refresh();
+        }
+        catch (Exception exception) when (exception is Win32Exception or IOException or UnauthorizedAccessException)
+        {
+            _displaysPage.ShowRefreshFailure(exception.Message);
+        }
     }
 
     private void RegisterHotKey(GlobalHotKeyAction action, HotKeyStatusViewModel status)
@@ -166,4 +218,5 @@ public partial class MainWindow : Window
     }
 
     private sealed record NavigationItem(string Label, string Icon, UserControl Page);
+
 }
