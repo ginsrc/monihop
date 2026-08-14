@@ -1,5 +1,6 @@
 using MoniHop.Core.Cursors;
 using MoniHop.Core.Displays;
+using MoniHop.Core.Windows;
 
 namespace MoniHop.Core.Tests.Cursors;
 
@@ -59,6 +60,38 @@ public sealed class CursorSwitchPlannerTests
         var result = new CursorSwitchPlanner().PlanNext(displays, new PixelPoint(99, 99));
 
         Assert.Equal(new PixelPoint(149, 49), result);
+    }
+
+    [Fact]
+    public void Plan_PreviousCyclesInReverseOrder()
+    {
+        var displays = new[]
+        {
+            Display("DISPLAY1", new PixelRect(0, 0, 100, 100)),
+            Display("DISPLAY2", new PixelRect(100, 0, 200, 100)),
+            Display("DISPLAY3", new PixelRect(200, 0, 300, 100)),
+        };
+
+        var result = new CursorSwitchPlanner().Plan(
+            displays,
+            new PixelPoint(150, 25),
+            DisplayDirection.Previous);
+
+        Assert.Equal(new PixelPoint(50, 25), result);
+    }
+
+    [Fact]
+    public void PlanCenter_ReturnsCenterOfDisplayContainingCursor()
+    {
+        var displays = new[]
+        {
+            Display("DISPLAY1", new PixelRect(0, 0, 100, 100)),
+            Display("DISPLAY2", new PixelRect(100, -50, 300, 150)),
+        };
+
+        var result = new CursorSwitchPlanner().PlanCenter(displays, new PixelPoint(120, 0));
+
+        Assert.Equal(new PixelPoint(200, 50), result);
     }
 
     private static DisplaySnapshot Display(string deviceName, PixelRect bounds) =>

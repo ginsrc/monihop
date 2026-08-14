@@ -108,6 +108,32 @@ public sealed class WindowSwitchServiceTests
         Assert.Equal(1, controller.WriteCount);
     }
 
+    [Fact]
+    public void SwitchDetailed_ReturnsMovedWindowRectangleForCursorPlacement()
+    {
+        var controller = new RecordingWindowController(
+            42,
+            Placement(new PixelRect(25, 25, 75, 75), showCommand: 1));
+        var service = Service(controller);
+
+        var outcome = service.SwitchDetailed(DisplayDirection.Next, excludedWindowHandle: 99);
+
+        Assert.Equal(WindowSwitchResult.Moved, outcome.Result);
+        Assert.Equal(new PixelRect(125, 25, 175, 75), outcome.TargetWindowRect);
+    }
+
+    [Fact]
+    public void SwitchDetailed_DoesNotReturnRectangleWhenMoveCannotRun()
+    {
+        var controller = new RecordingWindowController(42, placement: null);
+        var service = Service(controller);
+
+        var outcome = service.SwitchDetailed(DisplayDirection.Next, excludedWindowHandle: 99);
+
+        Assert.Equal(WindowSwitchResult.NoWindow, outcome.Result);
+        Assert.Null(outcome.TargetWindowRect);
+    }
+
     private static WindowSwitchService Service(RecordingWindowController controller) =>
         new(new StubDisplayCatalog(TwoDisplays()), controller);
 

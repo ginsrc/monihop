@@ -1,4 +1,5 @@
 using MoniHop.Core.Displays;
+using MoniHop.Core.Windows;
 using MoniHop.Windows.Cursors;
 
 namespace MoniHop.Windows.Tests.Cursors;
@@ -28,6 +29,41 @@ public sealed class CursorSwitchServiceTests
 
         Assert.Equal(CursorSwitchResult.NoTarget, service.SwitchNext());
         Assert.Null(cursor.LastSetPosition);
+    }
+
+    [Fact]
+    public void SwitchPrevious_MovesInReverseOrder()
+    {
+        var cursor = new RecordingCursorController(new PixelPoint(150, 50));
+        var service = new CursorSwitchService(new StubDisplayCatalog(TwoDisplays()), cursor);
+
+        var result = service.Switch(DisplayDirection.Previous);
+
+        Assert.Equal(CursorSwitchResult.Moved, result);
+        Assert.Equal(new PixelPoint(50, 50), cursor.LastSetPosition);
+    }
+
+    [Fact]
+    public void CenterCurrentDisplay_MovesToCurrentDisplayCenter()
+    {
+        var cursor = new RecordingCursorController(new PixelPoint(125, 25));
+        var service = new CursorSwitchService(new StubDisplayCatalog(TwoDisplays()), cursor);
+
+        var result = service.CenterCurrentDisplay();
+
+        Assert.Equal(CursorSwitchResult.Moved, result);
+        Assert.Equal(new PixelPoint(150, 50), cursor.LastSetPosition);
+    }
+
+    [Fact]
+    public void MoveToCenter_UsesVisibleRectangleCenter()
+    {
+        var cursor = new RecordingCursorController(new PixelPoint(0, 0));
+        var service = new CursorSwitchService(new StubDisplayCatalog(TwoDisplays()), cursor);
+
+        service.MoveToCenter(new PixelRect(120, 20, 180, 80));
+
+        Assert.Equal(new PixelPoint(150, 50), cursor.LastSetPosition);
     }
 
     private static IReadOnlyList<DisplaySnapshot> TwoDisplays() =>

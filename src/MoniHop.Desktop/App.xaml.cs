@@ -1,5 +1,6 @@
 using System.Windows;
 using MoniHop.Desktop.ApplicationProjection;
+using MoniHop.Desktop.HotKeys;
 using MoniHop.Desktop.Settings;
 using MoniHop.Desktop.WindowProjection;
 using MoniHop.Windows.ApplicationProjection;
@@ -28,10 +29,11 @@ public partial class App : Application
             var cursorSwitchService = new CursorSwitchService(
                 displayCatalog,
                 new NativeCursorController());
+            var nativeWindowController = new NativeWindowController();
             var windowSwitchService = new WindowSwitchService(
                 displayCatalog,
-                new NativeWindowController());
-            var applicationWindowController = new NativeApplicationWindowController();
+                nativeWindowController);
+            var applicationWindowController = new NativeApplicationWindowController(nativeWindowController);
             var installedApplicationCatalog = new NativeInstalledApplicationCatalog();
             var applicationProjectionSettings = new ApplicationProjectionSettingsService(
                 new JsonApplicationProjectionStore(paths.ApplicationProjectionFile));
@@ -42,6 +44,22 @@ public partial class App : Application
                 applicationProjectionSettings);
             var windowProjectionSettings = new WindowProjectionSettingsService(
                 new JsonWindowProjectionStore(paths.WindowProjectionFile));
+            var hotKeySettings = new HotKeySettingsService(
+                new JsonHotKeyStore(paths.HotKeysFile));
+            var projectionShortcutService = new WindowProjectionShortcutService(
+                displayCatalog,
+                nativeWindowController,
+                applicationWindowController,
+                windowProjectionSettings);
+            var hotKeyExecutor = new HotKeyActionExecutor(
+                cursorSwitchService,
+                windowSwitchService,
+                projectionShortcutService,
+                new OffscreenWindowRecallService(
+                    displayCatalog,
+                    applicationWindowController,
+                    new NativeVirtualDesktopWindowFilter()),
+                applicationProjectionSettings);
             var windowProjectionRuntime = new WindowProjectionRuntime(
                 new NativeWindowMoveSizeEventSource(),
                 new NativePointerState(),
@@ -53,8 +71,7 @@ public partial class App : Application
 
             new MainWindow(
                 displays,
-                cursorSwitchService,
-                windowSwitchService,
+                hotKeyExecutor,
                 profileService,
                 applicationProjectionSettings,
                 applicationWindowController,
@@ -62,6 +79,7 @@ public partial class App : Application
                 applicationProjectionRuntime,
                 windowProjectionSettings,
                 windowProjectionRuntime,
+                hotKeySettings,
                 paths).Show();
         }
         catch (Exception exception)

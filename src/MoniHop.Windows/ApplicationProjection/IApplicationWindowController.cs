@@ -8,5 +8,7 @@ public interface IApplicationWindowController
 
     IReadOnlyList<ApplicationWindowSnapshot> ReadAll();
 
+    IReadOnlyList<ApplicationWindowSnapshot> ReadAllWindows() => ReadAll();
+
     void Move(nint windowHandle, ApplicationProjectionPlan plan);
 }

@@ -63,7 +63,13 @@ public sealed class NativeApplicationWindowController : IApplicationWindowContro
             _windowController.ReadCapabilities(windowHandle));
     }
 
-    public IReadOnlyList<ApplicationWindowSnapshot> ReadAll()
+    public IReadOnlyList<ApplicationWindowSnapshot> ReadAll() => ReadAllWindows()
+        .GroupBy(item => $"{item.Application.Kind}:{item.Application.Value}", StringComparer.OrdinalIgnoreCase)
+        .Select(group => group.First())
+        .OrderBy(item => item.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+        .ToArray();
+
+    public IReadOnlyList<ApplicationWindowSnapshot> ReadAllWindows()
     {
         var windows = new List<ApplicationWindowSnapshot>();
         _ = EnumWindows(
@@ -86,11 +92,7 @@ public sealed class NativeApplicationWindowController : IApplicationWindowContro
             },
             0);
 
-        return windows
-            .GroupBy(item => $"{item.Application.Kind}:{item.Application.Value}", StringComparer.OrdinalIgnoreCase)
-            .Select(group => group.First())
-            .OrderBy(item => item.DisplayName, StringComparer.CurrentCultureIgnoreCase)
-            .ToArray();
+        return windows;
     }
 
     public void Move(nint windowHandle, ApplicationProjectionPlan plan)

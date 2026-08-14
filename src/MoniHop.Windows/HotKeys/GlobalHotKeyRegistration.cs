@@ -10,9 +10,6 @@ public sealed class GlobalHotKeyRegistration : IDisposable
     public const int WindowNextId = 0x4D49;
     public const int WindowPreviousId = 0x4D4A;
 
-    private const uint AltModifier = 0x0001;
-    private const uint ControlModifier = 0x0002;
-    private const uint ShiftModifier = 0x0004;
     private const uint NoRepeatModifier = 0x4000;
     private const uint MVirtualKey = 0x4D;
     private const uint LeftVirtualKey = 0x25;
@@ -35,35 +32,65 @@ public sealed class GlobalHotKeyRegistration : IDisposable
         nint windowHandle,
         GlobalHotKeyAction action)
     {
+        var gesture = action switch
+        {
+            GlobalHotKeyAction.CursorSwitch => new HotKeyGesture(
+                HotKeyModifiers.Alt | HotKeyModifiers.Control,
+                MVirtualKey),
+            GlobalHotKeyAction.WindowNext => new HotKeyGesture(
+                HotKeyModifiers.Alt | HotKeyModifiers.Control | HotKeyModifiers.Shift,
+                RightVirtualKey),
+            GlobalHotKeyAction.WindowPrevious => new HotKeyGesture(
+                HotKeyModifiers.Alt | HotKeyModifiers.Control | HotKeyModifiers.Shift,
+                LeftVirtualKey),
+            _ => throw new ArgumentOutOfRangeException(nameof(action)),
+        };
+
+        return Register(windowHandle, action, gesture);
+    }
+
+    public static GlobalHotKeyRegistration Register(
+        nint windowHandle,
+        GlobalHotKeyAction action,
+        HotKeyGesture gesture)
+        => Register(windowHandle, GetRegistrationId(action), gesture);
+
+    public static GlobalHotKeyRegistration Register(
+        nint windowHandle,
+        int registrationId,
+        HotKeyGesture gesture)
+    {
         if (windowHandle == 0)
         {
             throw new ArgumentException("A native window handle is required.", nameof(windowHandle));
         }
 
-        var (id, modifiers, virtualKey) = action switch
-        {
-            GlobalHotKeyAction.CursorSwitch => (
-                CursorSwitchId,
-                AltModifier | ControlModifier | NoRepeatModifier,
-                MVirtualKey),
-            GlobalHotKeyAction.WindowNext => (
-                WindowNextId,
-                AltModifier | ControlModifier | ShiftModifier | NoRepeatModifier,
-                RightVirtualKey),
-            GlobalHotKeyAction.WindowPrevious => (
-                WindowPreviousId,
-                AltModifier | ControlModifier | ShiftModifier | NoRepeatModifier,
-                LeftVirtualKey),
-            _ => throw new ArgumentOutOfRangeException(nameof(action)),
-        };
+        ValidateRegistrationId(registrationId);
+        var modifiers = (uint)gesture.Modifiers | NoRepeatModifier;
 
-        if (!RegisterHotKey(windowHandle, id, modifiers, virtualKey))
+        if (!RegisterHotKey(windowHandle, registrationId, modifiers, gesture.VirtualKey))
         {
             throw new Win32Exception(Marshal.GetLastWin32Error());
         }
 
-        return new GlobalHotKeyRegistration(windowHandle, id);
+        return new GlobalHotKeyRegistration(windowHandle, registrationId);
     }
+
+    public static void ValidateRegistrationId(int registrationId)
+    {
+        if (registrationId is < 1 or > 0xBFFF)
+        {
+            throw new ArgumentOutOfRangeException(nameof(registrationId));
+        }
+    }
+
+    public static int GetRegistrationId(GlobalHotKeyAction action) => action switch
+    {
+        GlobalHotKeyAction.CursorSwitch => CursorSwitchId,
+        GlobalHotKeyAction.WindowNext => WindowNextId,
+        GlobalHotKeyAction.WindowPrevious => WindowPreviousId,
+        _ => throw new ArgumentOutOfRangeException(nameof(action)),
+    };
 
     public void Dispose()
     {

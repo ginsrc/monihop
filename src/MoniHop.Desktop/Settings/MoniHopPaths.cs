@@ -7,7 +7,8 @@ public sealed record MoniHopPaths(
     string ConfigurationDirectory,
     string DisplayProfilesFile,
     string ApplicationProjectionFile,
-    string WindowProjectionFile)
+    string WindowProjectionFile,
+    string HotKeysFile)
 {
     public static MoniHopPaths CreateDefault()
     {
@@ -19,6 +20,7 @@ public sealed record MoniHopPaths(
             configurationDirectory,
             Path.Combine(configurationDirectory, "display-profiles.json"),
             Path.Combine(configurationDirectory, "application-projection.json"),
-            Path.Combine(configurationDirectory, "window-projection.json"));
+            Path.Combine(configurationDirectory, "window-projection.json"),
+            Path.Combine(configurationDirectory, "hotkeys.json"));
     }
 }

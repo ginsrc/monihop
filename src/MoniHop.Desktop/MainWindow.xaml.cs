@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using MoniHop.Core.Displays;
 using MoniHop.Core.Windows;
 using MoniHop.Desktop.ApplicationProjection;
+using MoniHop.Desktop.HotKeys;
 using MoniHop.Desktop.Models;
 using MoniHop.Desktop.Settings;
 using MoniHop.Desktop.Views;
@@ -21,25 +22,29 @@ namespace MoniHop.Desktop;
 
 public partial class MainWindow : Window
 {
-    private readonly CursorSwitchService _cursorSwitchService;
-    private readonly WindowSwitchService _windowSwitchService;
+    private const int FirstDynamicHotKeyId = 0x5200;
+
+    private readonly HotKeyActionExecutor _hotKeyExecutor;
     private readonly List<GlobalHotKeyRegistration> _hotKeyRegistrations = [];
+    private readonly Dictionary<int, HotKeyStatusViewModel> _registeredHotKeys = [];
     private readonly IReadOnlyList<NavigationItem> _navigationItems;
     private readonly DisplayProfileService _displayProfileService;
     private readonly DisplaysPage _displaysPage;
     private readonly ProjectionPage _projectionPage;
     private readonly ApplicationProjectionPage _applicationProjectionPage;
+    private readonly ApplicationProjectionSettingsService _applicationProjectionSettings;
     private readonly ApplicationProjectionRuntime _applicationProjectionRuntime;
     private readonly WindowProjectionRuntime _windowProjectionRuntime;
     private readonly WindowProjectionSettingsService _windowProjectionSettings;
+    private readonly HotKeySettingsService _hotKeySettings;
     private readonly DispatcherTimer _displayRefreshTimer;
     private HwndSource? _windowSource;
     private nint _windowHandle;
+    private QuickProjectionWindow? _quickProjectionWindow;
 
     public MainWindow(
         IReadOnlyList<DisplaySnapshot> displays,
-        CursorSwitchService cursorSwitchService,
-        WindowSwitchService windowSwitchService,
+        HotKeyActionExecutor hotKeyExecutor,
         DisplayProfileService displayProfileService,
         ApplicationProjectionSettingsService applicationProjectionSettings,
         IApplicationWindowController applicationWindowController,
@@ -47,24 +52,23 @@ public partial class MainWindow : Window
         ApplicationProjectionRuntime applicationProjectionRuntime,
         WindowProjectionSettingsService windowProjectionSettings,
         WindowProjectionRuntime windowProjectionRuntime,
+        HotKeySettingsService hotKeySettings,
         MoniHopPaths paths)
     {
         ArgumentNullException.ThrowIfNull(displays);
-        _cursorSwitchService = cursorSwitchService ?? throw new ArgumentNullException(nameof(cursorSwitchService));
-        _windowSwitchService = windowSwitchService ?? throw new ArgumentNullException(nameof(windowSwitchService));
+        _hotKeyExecutor = hotKeyExecutor ?? throw new ArgumentNullException(nameof(hotKeyExecutor));
         _displayProfileService = displayProfileService ?? throw new ArgumentNullException(nameof(displayProfileService));
-        ArgumentNullException.ThrowIfNull(applicationProjectionSettings);
+        _applicationProjectionSettings = applicationProjectionSettings ?? throw new ArgumentNullException(nameof(applicationProjectionSettings));
         ArgumentNullException.ThrowIfNull(applicationWindowController);
         ArgumentNullException.ThrowIfNull(installedApplicationCatalog);
         _applicationProjectionRuntime = applicationProjectionRuntime ?? throw new ArgumentNullException(nameof(applicationProjectionRuntime));
         _windowProjectionSettings = windowProjectionSettings ?? throw new ArgumentNullException(nameof(windowProjectionSettings));
         _windowProjectionRuntime = windowProjectionRuntime ?? throw new ArgumentNullException(nameof(windowProjectionRuntime));
+        _hotKeySettings = hotKeySettings ?? throw new ArgumentNullException(nameof(hotKeySettings));
         ArgumentNullException.ThrowIfNull(paths);
 
-        CursorHotKey = new HotKeyStatusViewModel("鼠标切到下一屏", "Ctrl + Alt + M");
-        WindowPreviousHotKey = new HotKeyStatusViewModel("当前窗口移到上一屏", "Ctrl + Alt + Shift + Left");
-        WindowNextHotKey = new HotKeyStatusViewModel("当前窗口移到下一屏", "Ctrl + Alt + Shift + Right");
-        HotKeys = [CursorHotKey, WindowPreviousHotKey, WindowNextHotKey];
+        HotKeys = [];
+        RebuildHotKeys();
 
         InitializeComponent();
 
@@ -85,6 +89,10 @@ public partial class MainWindow : Window
             installedApplicationCatalog);
         _projectionPage = new ProjectionPage(_windowProjectionSettings, _displayProfileService);
         _displayProfileService.Changed += DisplayProfileService_OnChanged;
+        _hotKeySettings.Changed += HotKeySettings_OnChanged;
+        _applicationProjectionSettings.Changed += ApplicationProjectionSettings_OnChanged;
+        _hotKeyExecutor.ProjectionPanelRequested += HotKeyExecutor_OnProjectionPanelRequested;
+        _hotKeyExecutor.SettingsRequested += HotKeyExecutor_OnSettingsRequested;
         _applicationProjectionRuntime.ProjectionCompleted += ApplicationProjectionRuntime_OnProjectionCompleted;
         _windowProjectionRuntime.ProjectionCompleted += WindowProjectionRuntime_OnProjectionCompleted;
         _navigationItems =
@@ -92,7 +100,7 @@ public partial class MainWindow : Window
             new("显示器", "\uE7F4", _displaysPage),
             new("窗口投放", "\uE8A7", _projectionPage),
             new("应用投放", "\uE8FD", _applicationProjectionPage),
-            new("快捷键", "\uE765", new HotKeysPage(HotKeys)),
+            new("快捷键", "\uE765", new HotKeysPage(HotKeys, _hotKeySettings)),
             new("行为与恢复", "\uE713", new BehaviorPage()),
             new("关于与诊断", "\uE946", new AboutPage(paths)),
         ];
@@ -103,12 +111,6 @@ public partial class MainWindow : Window
 
     public ObservableCollection<HotKeyStatusViewModel> HotKeys { get; }
 
-    public HotKeyStatusViewModel CursorHotKey { get; }
-
-    public HotKeyStatusViewModel WindowPreviousHotKey { get; }
-
-    public HotKeyStatusViewModel WindowNextHotKey { get; }
-
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
@@ -116,25 +118,25 @@ public partial class MainWindow : Window
         _windowSource = HwndSource.FromHwnd(_windowHandle);
         _windowSource.AddHook(WindowHook);
 
-        RegisterHotKey(GlobalHotKeyAction.CursorSwitch, CursorHotKey);
-        RegisterHotKey(GlobalHotKeyAction.WindowPrevious, WindowPreviousHotKey);
-        RegisterHotKey(GlobalHotKeyAction.WindowNext, WindowNextHotKey);
+        RegisterConfiguredHotKeys();
     }
 
     protected override void OnClosed(EventArgs e)
     {
         _displayRefreshTimer.Stop();
         _displayProfileService.Changed -= DisplayProfileService_OnChanged;
+        _hotKeySettings.Changed -= HotKeySettings_OnChanged;
+        _applicationProjectionSettings.Changed -= ApplicationProjectionSettings_OnChanged;
+        _hotKeyExecutor.ProjectionPanelRequested -= HotKeyExecutor_OnProjectionPanelRequested;
+        _hotKeyExecutor.SettingsRequested -= HotKeyExecutor_OnSettingsRequested;
         _applicationProjectionRuntime.ProjectionCompleted -= ApplicationProjectionRuntime_OnProjectionCompleted;
         _windowProjectionRuntime.ProjectionCompleted -= WindowProjectionRuntime_OnProjectionCompleted;
         _applicationProjectionRuntime.Dispose();
         _windowProjectionRuntime.Dispose();
         _displaysPage.Dispose();
+        _quickProjectionWindow?.Close();
         _windowSource?.RemoveHook(WindowHook);
-        foreach (var registration in _hotKeyRegistrations)
-        {
-            registration.Dispose();
-        }
+        ClearHotKeyRegistrations();
 
         base.OnClosed(e);
     }
@@ -160,20 +162,10 @@ public partial class MainWindow : Window
             return 0;
         }
 
-        switch ((int)wordParameter)
+        if (_registeredHotKeys.TryGetValue((int)wordParameter, out var hotKey))
         {
-            case GlobalHotKeyRegistration.CursorSwitchId:
-                handled = true;
-                RunCursorSwitch();
-                break;
-            case GlobalHotKeyRegistration.WindowPreviousId:
-                handled = true;
-                RunWindowSwitch(DisplayDirection.Previous, WindowPreviousHotKey);
-                break;
-            case GlobalHotKeyRegistration.WindowNextId:
-                handled = true;
-                RunWindowSwitch(DisplayDirection.Next, WindowNextHotKey);
-                break;
+            handled = true;
+            RunHotKey(hotKey);
         }
 
         return 0;
@@ -205,6 +197,7 @@ public partial class MainWindow : Window
 
     private void DisplayProfileService_OnChanged(object? sender, EventArgs e)
     {
+        RebuildHotKeys();
         _displaysPage.Refresh();
         _projectionPage.Refresh();
         _applicationProjectionPage.Refresh();
@@ -215,16 +208,60 @@ public partial class MainWindow : Window
         ApplicationProjectionRuntimeResult result) =>
         _applicationProjectionPage.ShowRuntimeResult(result);
 
+    private void ApplicationProjectionSettings_OnChanged(object? sender, EventArgs e) =>
+        _applicationProjectionPage.Refresh();
+
     private void WindowProjectionRuntime_OnProjectionCompleted(
         object? sender,
         WindowProjectionRuntimeResult result) =>
         _projectionPage.ShowRuntimeResult(result);
 
-    private void RegisterHotKey(GlobalHotKeyAction action, HotKeyStatusViewModel status)
+    private void HotKeySettings_OnChanged(object? sender, EventArgs e)
     {
+        foreach (var hotKey in HotKeys.Where(item => item.Definition is not null))
+        {
+            hotKey.SetGesture(_hotKeySettings.Current.Get(hotKey.Definition!.Id));
+        }
+
+        if (_windowHandle != 0)
+        {
+            RegisterConfiguredHotKeys();
+        }
+    }
+
+    private void RegisterConfiguredHotKeys()
+    {
+        ClearHotKeyRegistrations();
+        var registrationId = FirstDynamicHotKeyId;
+        foreach (var hotKey in HotKeys)
+        {
+            RegisterHotKey(registrationId++, hotKey);
+        }
+    }
+
+    private void ClearHotKeyRegistrations()
+    {
+        foreach (var registration in _hotKeyRegistrations)
+        {
+            registration.Dispose();
+        }
+
+        _hotKeyRegistrations.Clear();
+        _registeredHotKeys.Clear();
+    }
+
+    private void RegisterHotKey(int registrationId, HotKeyStatusViewModel status)
+    {
+        if (status.Gesture is not { } gesture)
+        {
+            status.SetGesture(null);
+            return;
+        }
+
         try
         {
-            _hotKeyRegistrations.Add(GlobalHotKeyRegistration.Register(_windowHandle, action));
+            _hotKeyRegistrations.Add(GlobalHotKeyRegistration.Register(_windowHandle, registrationId, gesture));
+            _registeredHotKeys[registrationId] = status;
             status.Update(isAvailable: true);
         }
         catch (Win32Exception)
@@ -233,39 +270,103 @@ public partial class MainWindow : Window
         }
     }
 
-    private void RunCursorSwitch()
+    private void RunHotKey(HotKeyStatusViewModel hotKey)
     {
+        if (hotKey.Definition is null)
+        {
+            return;
+        }
+
         try
         {
-            CursorHotKey.UpdateStatus(_cursorSwitchService.SwitchNext() switch
-            {
-                CursorSwitchResult.Moved => "已切换",
-                CursorSwitchResult.NoTarget => "仅连接一块显示器",
-                _ => "切换失败",
-            });
+            hotKey.UpdateStatus(_hotKeyExecutor.Execute(hotKey.Definition, _windowHandle).StatusMessage);
         }
-        catch (Win32Exception)
+        catch (Exception exception) when (
+            exception is Win32Exception or IOException or UnauthorizedAccessException or ArgumentException)
         {
-            CursorHotKey.UpdateStatus("切换失败");
+            hotKey.UpdateStatus("执行失败");
         }
     }
 
-    private void RunWindowSwitch(DisplayDirection direction, HotKeyStatusViewModel status)
+    private void RebuildHotKeys()
     {
+        var definitions = HotKeyCatalog.CreateForDisplays(
+            _displayProfileService.States.Select(state => new HotKeyDisplayTarget(
+                state.Profile.StableId,
+                state.DisplayName,
+                state.IsConnected)));
+        HotKeys.Clear();
+        foreach (var definition in definitions)
+        {
+            HotKeys.Add(new HotKeyStatusViewModel(definition, _hotKeySettings.Current.Get(definition.Id)));
+        }
+
+        if (_windowHandle != 0)
+        {
+            RegisterConfiguredHotKeys();
+        }
+    }
+
+    private void HotKeyExecutor_OnProjectionPanelRequested(
+        object? sender,
+        WindowProjectionCandidate candidate)
+    {
+        _quickProjectionWindow?.Close();
+        var displays = _displayProfileService.ApplyNames(_hotKeyExecutor.ReadProjectionDisplays());
+        _quickProjectionWindow = new QuickProjectionWindow(
+            candidate,
+            displays,
+            _hotKeyExecutor.ResolveProjectionDefaultTargetId(candidate),
+            _windowProjectionSettings.Current.DefaultLayout)
+        {
+            Owner = this,
+        };
+        _quickProjectionWindow.ProjectionRequested += QuickProjectionWindow_OnProjectionRequested;
+        _quickProjectionWindow.Closed += (_, _) => _quickProjectionWindow = null;
+        _quickProjectionWindow.Show();
+        _quickProjectionWindow.Activate();
+    }
+
+    private void QuickProjectionWindow_OnProjectionRequested(
+        object? sender,
+        QuickProjectionRequest request)
+    {
+        if (_quickProjectionWindow is null)
+        {
+            return;
+        }
+
         try
         {
-            status.UpdateStatus(_windowSwitchService.Switch(direction, _windowHandle) switch
+            var result = _hotKeyExecutor.Project(
+                _quickProjectionWindow.Candidate,
+                request.Layout,
+                request.TargetDisplayId);
+            if (result.Status == WindowProjectionShortcutStatus.Moved)
             {
-                WindowSwitchResult.Moved => "已移动",
-                WindowSwitchResult.NoTarget => "仅连接一块显示器",
-                WindowSwitchResult.NoWindow => "当前窗口不可移动",
-                _ => "移动失败",
-            });
+                _quickProjectionWindow.Close();
+            }
+            else
+            {
+                _quickProjectionWindow.ShowError("目标显示器或窗口当前不可用。");
+            }
         }
-        catch (Win32Exception)
+        catch (Exception exception) when (
+            exception is Win32Exception or UnauthorizedAccessException or ArgumentException)
         {
-            status.UpdateStatus("移动失败");
+            _quickProjectionWindow.ShowError("窗口投放失败，可能是权限或窗口状态限制。");
         }
+    }
+
+    private void HotKeyExecutor_OnSettingsRequested(object? sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Minimized)
+        {
+            WindowState = WindowState.Normal;
+        }
+
+        Show();
+        Activate();
     }
 
     private sealed record NavigationItem(string Label, string Icon, UserControl Page);

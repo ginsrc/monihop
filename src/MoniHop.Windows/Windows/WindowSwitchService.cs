@@ -21,18 +21,23 @@ public sealed class WindowSwitchService
 
     public WindowSwitchResult Switch(
         DisplayDirection direction,
+        nint excludedWindowHandle) =>
+        SwitchDetailed(direction, excludedWindowHandle).Result;
+
+    public WindowSwitchOutcome SwitchDetailed(
+        DisplayDirection direction,
         nint excludedWindowHandle)
     {
         var windowHandle = _windowController.GetForegroundWindow();
         if (windowHandle == 0 || windowHandle == excludedWindowHandle)
         {
-            return WindowSwitchResult.NoWindow;
+            return new WindowSwitchOutcome(WindowSwitchResult.NoWindow);
         }
 
         var placement = _windowController.ReadPlacement(windowHandle);
         if (placement is null)
         {
-            return WindowSwitchResult.NoWindow;
+            return new WindowSwitchOutcome(WindowSwitchResult.NoWindow);
         }
 
         var displays = _displayCatalog.ReadAll();
@@ -42,7 +47,7 @@ public sealed class WindowSwitchService
             direction);
         if (plan is null)
         {
-            return WindowSwitchResult.NoTarget;
+            return new WindowSwitchOutcome(WindowSwitchResult.NoTarget);
         }
 
         var targetNormalRect = plan.Value.TargetNormalRect;
@@ -69,6 +74,6 @@ public sealed class WindowSwitchService
                 WindowRect = plan.Value.TargetNormalRect,
                 NormalRect = targetNormalRect,
             });
-        return WindowSwitchResult.Moved;
+        return new WindowSwitchOutcome(WindowSwitchResult.Moved, plan.Value.TargetNormalRect);
     }
 }
