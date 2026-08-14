@@ -1,19 +1,212 @@
 <UserControl x:Class="MoniHop.Desktop.Views.ProjectionPage"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel>
-        <TextBlock Style="{StaticResource PageTitleStyle}" Text="窗口投放" />
-        <TextBlock Margin="0,8,0,22" Style="{StaticResource SecondaryTextStyle}" Text="临时移动当前窗口，不改变应用的长期打开规则。" />
-        <Border Style="{StaticResource SurfaceSectionStyle}">
-            <StackPanel>
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="快捷键投放" />
-                <TextBlock Margin="0,0,0,14" Style="{StaticResource SecondaryTextStyle}" Text="当前窗口切换到上一屏或下一屏已接入；每项快捷键独立显示。" />
-                <Grid Margin="0,5"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock FontWeight="SemiBold" Text="当前窗口移到上一屏"/><TextBlock Style="{StaticResource SecondaryTextStyle}" Text="Ctrl + Alt + Shift + Left"/></StackPanel><TextBlock Grid.Column="1" Foreground="{StaticResource SuccessBrush}" Text="已接入"/></Grid>
-                <Grid Margin="0,14"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock FontWeight="SemiBold" Text="当前窗口移到下一屏"/><TextBlock Style="{StaticResource SecondaryTextStyle}" Text="Ctrl + Alt + Shift + Right"/></StackPanel><TextBlock Grid.Column="1" Foreground="{StaticResource SuccessBrush}" Text="已接入"/></Grid>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             FontSize="15">
+    <Grid>
+        <ScrollViewer Focusable="False"
+                      FocusVisualStyle="{x:Null}"
+                      HorizontalScrollBarVisibility="Disabled"
+                      VerticalScrollBarVisibility="Auto">
+            <StackPanel MaxWidth="1040">
+                <TextBlock Style="{StaticResource PageTitleStyle}" Text="窗口投放" />
+                <TextBlock Margin="0,6,0,18" Style="{StaticResource SecondaryTextStyle}"
+                           Text="拖动普通窗口到顶部投放口，选择本次目标显示器和布局；不会修改应用规则。" />
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource SurfaceSectionStyle}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="顶部投放层" />
+                                    <TextBlock Margin="0,4,18,0" Style="{StaticResource SecondaryTextStyle}"
+                                               Text="仅在拖动窗口期间运行，不获取焦点，也不会拦截鼠标。" />
+                                </StackPanel>
+                                <CheckBox x:Name="EnabledToggle" Grid.Column="1" VerticalAlignment="Top"
+                                          Style="{StaticResource ToggleSwitchStyle}"
+                                          Checked="EnabledToggle_OnChanged"
+                                          Unchecked="EnabledToggle_OnChanged" />
+                            </Grid>
+
+                            <Border Margin="0,18,0,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" />
+                            <TextBlock FontWeight="SemiBold" Text="显示时机" />
+                            <TextBlock Margin="0,4,0,10" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="拖动开始即显示投放口，可停留约 300ms 后展开，或进入后立即展开。" />
+                            <ComboBox x:Name="TriggerModeCombo"
+                                      SelectionChanged="TriggerModeCombo_OnChanged"
+                                      SelectedIndex="0">
+                                <ComboBoxItem Content="投放口停留后展开" Tag="EdgeDwell" />
+                                <ComboBoxItem Content="进入投放口立即展开" Tag="Immediate" />
+                            </ComboBox>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource SurfaceSectionStyle}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="默认投放行为" />
+                            <TextBlock Margin="0,4,0,14" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="在命令条主区域释放时生效；布局与显示器入口只覆盖本次投放。" />
+
+                            <TextBlock FontWeight="SemiBold" Text="默认目标显示器" />
+                            <ComboBox x:Name="DefaultTargetCombo" Margin="0,8,0,14"
+                                      SelectionChanged="DefaultTargetCombo_OnChanged" />
+
+                            <TextBlock FontWeight="SemiBold" Text="默认布局" />
+                            <ComboBox x:Name="DefaultLayoutCombo" Margin="0,8,0,0"
+                                      SelectionChanged="DefaultLayoutCombo_OnChanged" />
+
+                            <Border x:Name="MissingTargetNotice" Margin="0,12,0,0" Padding="10,8"
+                                    Background="#FFF8E7" BorderBrush="#E7C55A" BorderThickness="1" CornerRadius="5"
+                                    Visibility="Collapsed">
+                                <TextBlock FontSize="13" Foreground="#725B13" TextWrapping="Wrap"
+                                           Text="默认显示器当前未连接；本次会使用下一块显示器，原配置保持不变。" />
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.12*" />
+                        <ColumnDefinition Width="16" />
+                        <ColumnDefinition Width="0.88*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource SurfaceSectionStyle}">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="顶部入口位置" />
+                                    <TextBlock Margin="0,4,12,0" Style="{StaticResource SecondaryTextStyle}"
+                                               Text="入口始终贴住显示器顶部，只调整横向位置；所有显示器共享该位置。" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                    <Button x:Name="EditPositionButton" Style="{StaticResource SecondaryButtonStyle}"
+                                            Content="调整位置" Click="EditPositionButton_OnClick" />
+                                    <Button Margin="8,0,0,0" Style="{StaticResource SecondaryButtonStyle}"
+                                            Content="恢复默认" Click="ResetPositionButton_OnClick" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Border Margin="0,16,0,0" Height="112"
+                                    Background="{StaticResource SurfaceSecondaryBrush}"
+                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    CornerRadius="5" ClipToBounds="True">
+                                <Canvas x:Name="PositionCanvas"
+                                        Background="Transparent"
+                                        SizeChanged="PositionCanvas_OnSizeChanged"
+                                        MouseLeftButtonDown="PositionCanvas_OnMouseLeftButtonDown"
+                                        MouseMove="PositionCanvas_OnMouseMove"
+                                        MouseLeftButtonUp="PositionCanvas_OnMouseLeftButtonUp">
+                                    <Border x:Name="PositionMarker" Width="64" Height="28"
+                                            Background="#FCFCFD" BorderBrush="#AEB8C7"
+                                            BorderThickness="1,0,1,1" CornerRadius="0,0,7,7">
+                                        <Grid>
+                                            <Grid Width="18" Height="14" HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" Margin="0,0,0,4">
+                                                <Border Width="18" Height="10" HorizontalAlignment="Center"
+                                                        VerticalAlignment="Top" BorderBrush="#344054"
+                                                        BorderThickness="1" CornerRadius="1" />
+                                                <Border Width="2" Height="3" HorizontalAlignment="Center"
+                                                        VerticalAlignment="Bottom" Margin="0,0,0,1"
+                                                        Background="#344054" />
+                                                <Border Width="8" Height="1" HorizontalAlignment="Center"
+                                                        VerticalAlignment="Bottom" Background="#344054" />
+                                            </Grid>
+                                            <Border Width="24" Height="3" HorizontalAlignment="Center"
+                                                    VerticalAlignment="Bottom" Margin="0,0,0,3"
+                                                    Background="{StaticResource BrandBrush}" CornerRadius="2" />
+                                        </Grid>
+                                    </Border>
+                                </Canvas>
+                            </Border>
+                            <TextBlock Margin="0,8,0,0" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="解锁后左右拖动白色入口；位置调整后自动保存。" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource SurfaceSectionStyle}">
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="可用布局" />
+                            <TextBlock Margin="0,4,0,14" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="在布局入口释放时，覆盖本次默认布局。" />
+
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="10" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="10" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border Grid.Row="0" Grid.Column="0" Padding="12,10"
+                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold" Text="保持尺寸" />
+                                        <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
+                                                   Text="保留尺寸与相对位置" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="0" Grid.Column="2" Padding="12,10"
+                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold" Text="最大化" />
+                                        <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
+                                                   Text="铺满目标工作区" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="2" Grid.Column="0" Padding="12,10"
+                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold" Text="左半屏" />
+                                        <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
+                                                   Text="目标显示器左半区" />
+                                    </StackPanel>
+                                </Border>
+                                <Border Grid.Row="2" Grid.Column="2" Padding="12,10"
+                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                    <StackPanel>
+                                        <TextBlock FontWeight="SemiBold" Text="右半屏" />
+                                        <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
+                                                   Text="目标显示器右半区" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
+
+                            <TextBlock Margin="0,12,0,0" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="固定尺寸窗口会自动使用“保持尺寸”，不会被强制拉伸。" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border x:Name="ActionToast"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="0,0,20,20" Padding="12,9"
+                Background="#FCFCFD" BorderBrush="{StaticResource BorderBrush}"
+                BorderThickness="1" CornerRadius="5" Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal">
+                <Ellipse x:Name="ToastIndicator" Width="7" Height="7" VerticalAlignment="Center" />
+                <TextBlock x:Name="ToastText" Margin="8,0,0,0" VerticalAlignment="Center" />
             </StackPanel>
         </Border>
-        <Border Margin="0,18,0,0" Style="{StaticResource SurfaceSectionStyle}">
-            <StackPanel><TextBlock Style="{StaticResource SectionTitleStyle}" Text="顶部投放层"/><TextBlock Margin="0,0,0,14" Style="{StaticResource SecondaryTextStyle}" Text="伴随式投放层、固定位置和自由拖动三种模式已完成方向确认，系统运行能力尚未接入。"/><CheckBox Content="启用顶部投放层" Style="{StaticResource ToggleSwitchStyle}" IsEnabled="False"/><TextBlock Margin="0,12,0,0" Foreground="{StaticResource DisabledBrush}" Text="待开发 · 当前不可用"/></StackPanel>
-        </Border>
-    </StackPanel></ScrollViewer>
+    </Grid>
 </UserControl>

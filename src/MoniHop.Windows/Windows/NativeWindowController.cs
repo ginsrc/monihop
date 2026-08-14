@@ -11,6 +11,8 @@ public sealed class NativeWindowController : IWindowController
     private const int ExtendedStyleIndex = -20;
     private const int StyleIndex = -16;
     private const int CaptionStyle = 0x00C00000;
+    private const int ResizeBorderStyle = 0x00040000;
+    private const int MaximizeBoxStyle = 0x00010000;
     private const int ToolWindowStyle = 0x00000080;
     private const int NoActivateWindowStyle = 0x08000000;
     private const uint NoSizePositionFlag = 0x0001;
@@ -60,10 +62,24 @@ public sealed class NativeWindowController : IWindowController
         int extendedStyle,
         string className) =>
         isVisible && !isIconic && owner == 0 && parent == 0 &&
-        (windowStyle & CaptionStyle) == CaptionStyle &&
+        ((windowStyle & CaptionStyle) == CaptionStyle ||
+         (windowStyle & ResizeBorderStyle) != 0) &&
         (extendedStyle & (ToolWindowStyle | NoActivateWindowStyle)) == 0 &&
         !string.Equals(className, "#32768", StringComparison.Ordinal) &&
         !string.Equals(className, "Windows.UI.Core.CoreWindow", StringComparison.OrdinalIgnoreCase);
+
+    public WindowCapabilities ReadCapabilities(nint windowHandle)
+    {
+        if (windowHandle == 0 || !IsWindow(windowHandle))
+        {
+            return default;
+        }
+
+        var style = GetWindowLongNative(windowHandle, StyleIndex);
+        return new WindowCapabilities(
+            (style & ResizeBorderStyle) != 0,
+            (style & MaximizeBoxStyle) != 0);
+    }
 
     public void MoveWindow(nint windowHandle, WindowPlacementSnapshot placement)
     {

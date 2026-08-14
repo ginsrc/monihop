@@ -59,7 +59,8 @@ public sealed class NativeApplicationWindowController : IApplicationWindowContro
             windowHandle,
             identity,
             ReadDisplayName(identity),
-            placement.Value);
+            placement.Value,
+            _windowController.ReadCapabilities(windowHandle));
     }
 
     public IReadOnlyList<ApplicationWindowSnapshot> ReadAll()

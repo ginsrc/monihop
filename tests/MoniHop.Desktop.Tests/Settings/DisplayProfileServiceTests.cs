@@ -39,6 +39,24 @@ public sealed class DisplayProfileServiceTests
     }
 
     [Fact]
+    public void Rename_PublishesChangeAndAppliesCustomNameToLiveSnapshots()
+    {
+        var display = Display("DISPLAY1", "stable-a");
+        var service = new DisplayProfileService(
+            new MutableDisplayCatalog(display),
+            new MemoryDisplayProfileStore());
+        service.Refresh();
+        var changedCount = 0;
+        service.Changed += (_, _) => changedCount++;
+
+        service.Rename("stable-a", "Work screen");
+        var named = service.ApplyNames([display]);
+
+        Assert.Equal(1, changedCount);
+        Assert.Equal("Work screen", Assert.Single(named).DisplayName);
+    }
+
+    [Fact]
     public void Forget_RejectsConnectedDisplayAndRemovesDisconnectedDisplay()
     {
         var catalog = new MutableDisplayCatalog(Display("DISPLAY1", "stable-a"));

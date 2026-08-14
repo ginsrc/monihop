@@ -122,6 +122,41 @@ public sealed class ApplicationProjectionPlannerTests
         Assert.Null(plan);
     }
 
+    [Fact]
+    public void Plan_KeepSizeProportionallyShrinksWindowToFitTargetWorkArea()
+    {
+        var settings = new ApplicationProjectionSettings(
+            true,
+            null,
+            [new ApplicationProjectionRule(Browser, "Browser", "stable-b", ProjectionLayout.KeepSize, true)]);
+        var displays = new[]
+        {
+            new DisplaySnapshot(
+                "DISPLAY1",
+                "Display 1",
+                new PixelRect(0, 0, 100, 100),
+                new PixelRect(0, 0, 100, 100),
+                true,
+                "stable-a"),
+            new DisplaySnapshot(
+                "DISPLAY2",
+                "Display 2",
+                new PixelRect(100, 0, 160, 50),
+                new PixelRect(100, 0, 160, 50),
+                false,
+                "stable-b"),
+        };
+
+        var plan = new ApplicationProjectionPlanner().Plan(
+            settings,
+            Browser,
+            displays,
+            new PixelRect(10, 10, 90, 90));
+
+        Assert.NotNull(plan);
+        Assert.Equal(new PixelRect(106, 0, 156, 50), plan.TargetRect);
+    }
+
     private static IReadOnlyList<DisplaySnapshot> Displays() =>
     [
         new DisplaySnapshot(

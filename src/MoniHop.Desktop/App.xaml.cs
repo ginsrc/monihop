@@ -1,10 +1,12 @@
 using System.Windows;
 using MoniHop.Desktop.ApplicationProjection;
 using MoniHop.Desktop.Settings;
+using MoniHop.Desktop.WindowProjection;
 using MoniHop.Windows.ApplicationProjection;
 using MoniHop.Windows.Cursors;
 using MoniHop.Windows.Displays;
 using MoniHop.Windows.Windows;
+using MoniHop.Windows.WindowProjection;
 
 namespace MoniHop.Desktop;
 
@@ -38,6 +40,16 @@ public partial class App : Application
                 applicationWindowController,
                 displayCatalog,
                 applicationProjectionSettings);
+            var windowProjectionSettings = new WindowProjectionSettingsService(
+                new JsonWindowProjectionStore(paths.WindowProjectionFile));
+            var windowProjectionRuntime = new WindowProjectionRuntime(
+                new NativeWindowMoveSizeEventSource(),
+                new NativePointerState(),
+                new WindowProjectionOverlay(),
+                applicationWindowController,
+                displayCatalog,
+                windowProjectionSettings,
+                displayProfileService: profileService);
 
             new MainWindow(
                 displays,
@@ -48,6 +60,8 @@ public partial class App : Application
                 applicationWindowController,
                 installedApplicationCatalog,
                 applicationProjectionRuntime,
+                windowProjectionSettings,
+                windowProjectionRuntime,
                 paths).Show();
         }
         catch (Exception exception)

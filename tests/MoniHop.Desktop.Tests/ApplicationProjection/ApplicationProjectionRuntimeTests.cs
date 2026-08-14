@@ -106,6 +106,29 @@ public sealed class ApplicationProjectionRuntimeTests
     }
 
     [Fact]
+    public async Task ShownEvent_FallsBackToKeepSizeWhenWindowCannotResize()
+    {
+        var source = new StubEventSource();
+        var snapshot = Snapshot(42) with
+        {
+            Capabilities = new WindowCapabilities(false, false),
+        };
+        var controller = new RecordingController(snapshot);
+        using var runtime = Runtime(
+            source,
+            controller,
+            isEnabled: true,
+            ruleLayout: ProjectionLayout.Maximized);
+
+        source.Raise(new WindowEvent(WindowEventKind.Shown, 42));
+        await controller.Moved.Task.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(ProjectionLayout.KeepSize, controller.WrittenPlan?.Layout);
+        Assert.Equal(new PixelRect(110, 10, 170, 70), controller.WrittenPlan?.TargetRect);
+        Assert.False(controller.WrittenPlan?.ShouldMaximize);
+    }
+
+    [Fact]
     public async Task DestroyedEvent_DoesNotLetCanceledWorkRemoveReusedHandleWork()
     {
         var source = new StubEventSource();
@@ -152,9 +175,21 @@ public sealed class ApplicationProjectionRuntimeTests
         RecordingController controller,
         bool isEnabled,
         TimeSpan? retryDelay = null,
-        TimeSpan? settleDelay = null)
+        TimeSpan? settleDelay = null,
+        ProjectionLayout? ruleLayout = null)
     {
-        var store = new MemoryStore(new ApplicationProjectionSettings(isEnabled, "stable-b", []));
+        var rules = ruleLayout is null
+            ? []
+            : new[]
+            {
+                new ApplicationProjectionRule(
+                    controller.Snapshot.Application,
+                    controller.Snapshot.DisplayName,
+                    "stable-b",
+                    ruleLayout.Value,
+                    true),
+            };
+        var store = new MemoryStore(new ApplicationProjectionSettings(isEnabled, "stable-b", rules));
         return new ApplicationProjectionRuntime(
             source,
             controller,
@@ -183,6 +218,7 @@ public sealed class ApplicationProjectionRuntimeTests
 
     private sealed class RecordingController(ApplicationWindowSnapshot snapshot) : IApplicationWindowController
     {
+        public ApplicationWindowSnapshot Snapshot { get; } = snapshot;
         public TaskCompletionSource Moved { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int MissingReadCount { get; init; }
         public int ReadCount { get; private set; }
@@ -192,9 +228,9 @@ public sealed class ApplicationProjectionRuntimeTests
         public ApplicationWindowSnapshot? Read(nint windowHandle)
         {
             ReadCount++;
-            return ReadCount <= MissingReadCount ? null : snapshot;
+            return ReadCount <= MissingReadCount ? null : Snapshot;
         }
-        public IReadOnlyList<ApplicationWindowSnapshot> ReadAll() => [snapshot];
+        public IReadOnlyList<ApplicationWindowSnapshot> ReadAll() => [Snapshot];
         public void Move(nint windowHandle, ApplicationProjectionPlan plan)
         {
             MoveCount++;

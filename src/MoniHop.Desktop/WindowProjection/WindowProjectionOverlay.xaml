@@ -1,0 +1,191 @@
+<Window x:Class="MoniHop.Desktop.WindowProjection.WindowProjectionOverlay"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        ShowInTaskbar="False" ShowActivated="False" WindowStyle="None" ResizeMode="NoResize"
+        AllowsTransparency="True" Background="Transparent" Topmost="True"
+        SnapsToDevicePixels="True" UseLayoutRounding="True">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition x:Name="OverlayLeftColumn" Width="0" />
+            <ColumnDefinition x:Name="OverlayPortalColumn" Width="*" />
+            <ColumnDefinition x:Name="OverlayRightColumn" Width="0" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="OverlayPortalRow" Height="*" />
+            <RowDefinition x:Name="OverlayCommandRow" Height="0" />
+        </Grid.RowDefinitions>
+
+        <Border x:Name="PortalRoot" Grid.Column="1" Grid.Row="0"
+                Background="#FCFCFD" BorderBrush="#AEB8C7" BorderThickness="1,0,1,1" CornerRadius="0,0,8,8"
+                Visibility="Collapsed" RenderTransformOrigin="0.5,0">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="PortalTranslate" />
+            </Border.RenderTransform>
+            <Grid>
+                <Grid Width="18" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,4">
+                    <Border Width="18" Height="10" HorizontalAlignment="Center" VerticalAlignment="Top"
+                            BorderBrush="#344054" BorderThickness="1" CornerRadius="1" />
+                    <Border Width="2" Height="3" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                            Margin="0,0,0,1" Background="#344054" />
+                    <Border Width="8" Height="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                            Background="#344054" />
+                </Grid>
+                <Border Width="24" Height="3" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                        Margin="0,0,0,3" Background="#2563EB" CornerRadius="2" />
+            </Grid>
+        </Border>
+
+        <Border x:Name="CommandRoot" Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="1"
+                Background="#FCFCFD" BorderBrush="#AEB8C7" BorderThickness="1" CornerRadius="6"
+                Visibility="Collapsed" ClipToBounds="True" RenderTransformOrigin="0.5,0">
+            <Border.RenderTransform>
+                <ScaleTransform x:Name="CommandScale" ScaleX="1" />
+            </Border.RenderTransform>
+            <Grid x:Name="CommandContent" Opacity="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="5*" />
+                    <ColumnDefinition Width="2*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="76*" />
+                    <RowDefinition Height="44*" />
+                </Grid.RowDefinitions>
+
+                <Border x:Name="DefaultDropCard" Grid.Row="0" Grid.Column="0" Margin="4,4,3,3"
+                        Background="#F1F4F8" BorderBrush="#D5DAE2" BorderThickness="1" CornerRadius="4">
+                    <Grid Margin="12,7">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="28" Height="28" Background="#E5EAF1" CornerRadius="4">
+                            <Grid Width="18" Height="14" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border Width="18" Height="10" HorizontalAlignment="Center" VerticalAlignment="Top"
+                                        BorderBrush="#3F4B5D" BorderThickness="1" CornerRadius="1" />
+                                <Border Width="2" Height="3" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                        Margin="0,0,0,1" Background="#3F4B5D" />
+                                <Border Width="8" Height="1" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                        Background="#3F4B5D" />
+                            </Grid>
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="7,0,0,0">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Foreground="#1F2937" Text="投放窗口" />
+                            <TextBlock x:Name="DefaultTargetText" Margin="0,2,0,0" FontSize="11" Foreground="#667085"
+                                       TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <Border Grid.Column="2" VerticalAlignment="Center" Padding="7,3" Background="#E8F0FF" CornerRadius="3">
+                            <TextBlock x:Name="DefaultLayoutText" FontSize="10" Foreground="#2563EB" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <ItemsControl x:Name="LayoutList" Grid.Row="1" Grid.Column="0">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Rows="1" Columns="4" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4,1,3,4" AutomationProperties.Name="{Binding Label}">
+                                <Border x:Name="LayoutCell" Background="Transparent"
+                                        BorderBrush="#D5DAE2" BorderThickness="1" CornerRadius="3">
+                                    <Grid Width="28" Height="20" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <Border BorderBrush="#7B8492" BorderThickness="1" CornerRadius="1" />
+                                        <Border x:Name="LayoutFill" Margin="2" Background="#AEB8C7" CornerRadius="1" />
+                                    </Grid>
+                                </Border>
+                                <Border x:Name="HoverHint" Panel.ZIndex="2"
+                                        HorizontalAlignment="Center" VerticalAlignment="Top"
+                                        Margin="0,-23,0,0" Padding="6,3"
+                                        Background="#202124" CornerRadius="3"
+                                        Visibility="Collapsed">
+                                    <TextBlock FontSize="10" Foreground="White" Text="{Binding Label}"
+                                               TextWrapping="NoWrap" />
+                                </Border>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Layout}" Value="KeepSize">
+                                    <Setter TargetName="LayoutFill" Property="Width" Value="14" />
+                                    <Setter TargetName="LayoutFill" Property="Height" Value="9" />
+                                    <Setter TargetName="LayoutFill" Property="HorizontalAlignment" Value="Center" />
+                                    <Setter TargetName="LayoutFill" Property="VerticalAlignment" Value="Center" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Layout}" Value="LeftHalf">
+                                    <Setter TargetName="LayoutFill" Property="Width" Value="11" />
+                                    <Setter TargetName="LayoutFill" Property="HorizontalAlignment" Value="Left" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Layout}" Value="RightHalf">
+                                    <Setter TargetName="LayoutFill" Property="Width" Value="11" />
+                                    <Setter TargetName="LayoutFill" Property="HorizontalAlignment" Value="Right" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                    <Setter TargetName="LayoutCell" Property="Background" Value="#E8F0FF" />
+                                    <Setter TargetName="LayoutCell" Property="BorderBrush" Value="#2563EB" />
+                                    <Setter TargetName="LayoutFill" Property="Background" Value="#2563EB" />
+                                    <Setter TargetName="HoverHint" Property="Visibility" Value="Visible" />
+                                    <DataTrigger.EnterActions>
+                                        <BeginStoryboard>
+                                            <Storyboard>
+                                                <DoubleAnimation Storyboard.TargetName="LayoutCell" Storyboard.TargetProperty="Opacity"
+                                                                 From="0.72" To="1" Duration="0:0:0.08" />
+                                            </Storyboard>
+                                        </BeginStoryboard>
+                                    </DataTrigger.EnterActions>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Grid.RowSpan="2" Grid.Column="1" BorderBrush="#D9DEE7" BorderThickness="1,0,0,0">
+                    <ItemsControl x:Name="DisplayList">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="1" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border x:Name="DisplayCell" Margin="3" Padding="7,3" Background="Transparent"
+                                        BorderBrush="Transparent" BorderThickness="1" CornerRadius="3">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="24" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Width="20" Height="16" BorderBrush="#7B8492" BorderThickness="1" CornerRadius="2">
+                                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="9"
+                                                       Foreground="#465064" Text="{Binding Number}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="1" VerticalAlignment="Center" FontSize="10" Foreground="#596273"
+                                                   Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                    </Grid>
+                                </Border>
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                        <Setter TargetName="DisplayCell" Property="Background" Value="#EEF4FF" />
+                                        <Setter TargetName="DisplayCell" Property="BorderBrush" Value="#A8C7FF" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsHighlighted}" Value="True">
+                                        <Setter TargetName="DisplayCell" Property="Background" Value="#DCE9FF" />
+                                        <Setter TargetName="DisplayCell" Property="BorderBrush" Value="#2563EB" />
+                                        <DataTrigger.EnterActions>
+                                            <BeginStoryboard>
+                                                <Storyboard>
+                                                    <DoubleAnimation Storyboard.TargetName="DisplayCell" Storyboard.TargetProperty="Opacity"
+                                                                     From="0.72" To="1" Duration="0:0:0.08" />
+                                                </Storyboard>
+                                            </BeginStoryboard>
+                                        </DataTrigger.EnterActions>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

@@ -19,12 +19,12 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
-                                <Border Width="190" Height="112" Margin="6" Padding="16"
+                                <Border Width="206" Height="112" Margin="6" Padding="16"
                                         Background="{StaticResource BrandSubtleBrush}"
                                         BorderBrush="{StaticResource BrandBrush}" BorderThickness="1" CornerRadius="5">
                                     <StackPanel>
-                                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding ScreenLabel}" />
-                                        <TextBlock Margin="0,8,0,0" Text="{Binding Name}" />
+                                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Margin="0,8,0,0" Text="{Binding ScreenLabel}" />
                                         <TextBlock Margin="0,4,0,0" Style="{StaticResource SecondaryTextStyle}" Text="{Binding PrimaryStatus}" />
                                     </StackPanel>
                                 </Border>
@@ -40,11 +40,30 @@
             <TextBlock x:Name="RefreshStatusText" Margin="0,0,0,10" Style="{StaticResource SecondaryTextStyle}" />
             <ListView ItemsSource="{Binding AllDisplays}"
                       MinHeight="150"
+                      AlternationCount="2"
                       ScrollViewer.HorizontalScrollBarVisibility="Auto"
                       ScrollViewer.VerticalScrollBarVisibility="Disabled">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="MinHeight" Value="46" />
+                        <Setter Property="Padding" Value="6,0" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                        <Setter Property="BorderThickness" Value="0,0,0,1" />
+                        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+                        <Style.Triggers>
+                            <Trigger Property="ItemsControl.AlternationIndex" Value="1">
+                                <Setter Property="Background" Value="#FAFBFC" />
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{StaticResource BrandSubtleBrush}" />
+                            </Trigger>
+                        </Style.Triggers>
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="显示器名称" Width="120" DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Header="显示器名称" Width="140"><GridViewColumn.CellTemplate><DataTemplate><TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" /></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                         <GridViewColumn Header="属性" Width="110" DisplayMemberBinding="{Binding PrimaryStatus}" />
                         <GridViewColumn Header="分辨率" Width="105" DisplayMemberBinding="{Binding Resolution}" />
                         <GridViewColumn Header="刷新率" Width="70" DisplayMemberBinding="{Binding RefreshRate}" />

@@ -6,5 +6,7 @@ public interface IWindowController
 
     WindowPlacementSnapshot? ReadPlacement(nint windowHandle);
 
+    WindowCapabilities ReadCapabilities(nint windowHandle) => WindowCapabilities.Standard;
+
     void MoveWindow(nint windowHandle, WindowPlacementSnapshot placement);
 }

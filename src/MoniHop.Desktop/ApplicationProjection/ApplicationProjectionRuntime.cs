@@ -3,6 +3,7 @@ using MoniHop.Core.ApplicationProjection;
 using MoniHop.Core.Displays;
 using MoniHop.Desktop.Settings;
 using MoniHop.Windows.ApplicationProjection;
+using MoniHop.Windows.Windows;
 
 namespace MoniHop.Desktop.ApplicationProjection;
 
@@ -118,16 +119,34 @@ public sealed class ApplicationProjectionRuntime : IDisposable
                 return;
             }
 
+            var displays = _displayCatalog.ReadAll();
+            var sourceRect = window.Placement.IsMaximized
+                ? window.Placement.NormalRect
+                : window.Placement.WindowRect;
             var plan = _planner.Plan(
                 _settingsService.Current,
                 window.Application,
-                _displayCatalog.ReadAll(),
-                window.Placement.IsMaximized
-                    ? window.Placement.NormalRect
-                    : window.Placement.WindowRect);
+                displays,
+                sourceRect);
             if (plan is null)
             {
                 return;
+            }
+
+            var effectiveLayout = ResolveSupportedLayout(plan.Layout, window.Capabilities);
+            if (effectiveLayout != plan.Layout)
+            {
+                plan = new ApplicationProjectionPlan(
+                    plan.TargetDisplay,
+                    ProjectionGeometry.CalculateTargetRect(
+                        displays,
+                        plan.TargetDisplay,
+                        sourceRect,
+                        effectiveLayout),
+                    effectiveLayout,
+                    false,
+                    plan.RuleSource,
+                    plan.UsedPrimaryFallback);
             }
 
             _windowController.Move(windowHandle, plan);
@@ -191,6 +210,17 @@ public sealed class ApplicationProjectionRuntime : IDisposable
 
         return null;
     }
+
+    private static ProjectionLayout ResolveSupportedLayout(
+        ProjectionLayout requested,
+        WindowCapabilities capabilities) =>
+        requested switch
+        {
+            ProjectionLayout.Maximized when !capabilities.CanMaximize => ProjectionLayout.KeepSize,
+            ProjectionLayout.LeftHalf or ProjectionLayout.RightHalf when !capabilities.CanResize =>
+                ProjectionLayout.KeepSize,
+            _ => requested,
+        };
 }
 
 public sealed record ApplicationProjectionRuntimeResult(

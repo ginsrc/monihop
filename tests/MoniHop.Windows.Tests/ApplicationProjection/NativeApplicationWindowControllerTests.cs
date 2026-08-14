@@ -11,6 +11,7 @@ public sealed class NativeApplicationWindowControllerTests
 {
     [Theory]
     [InlineData(true, false, 0, 0, 0x00C00000, 0, "Chrome_WidgetWin_1", true)]
+    [InlineData(true, false, 0, 0, 0x170F0000, 0x00000100, "OpusApp", true)]
     [InlineData(true, false, 42, 0, 0x00C00000, 0, "Chrome_RenderWidgetHostHWND", false)]
     [InlineData(true, false, 0, 42, 0x00C00000, 0, "Chrome_RenderWidgetHostHWND", false)]
     [InlineData(true, false, 0, 0, 0x00C00000, 0x00000080, "toolwindow", false)]
@@ -21,8 +22,8 @@ public sealed class NativeApplicationWindowControllerTests
     public void IsApplicationWindowCandidate_RejectsTransientOrNestedWindows(
         bool isVisible,
         bool isIconic,
-        nint owner,
-        nint parent,
+        long owner,
+        long parent,
         int windowStyle,
         int extendedStyle,
         string className,
@@ -33,8 +34,8 @@ public sealed class NativeApplicationWindowControllerTests
             NativeWindowController.IsApplicationWindowCandidate(
                 isVisible,
                 isIconic,
-                owner,
-                parent,
+                new nint(owner),
+                new nint(parent),
                 windowStyle,
                 extendedStyle,
                 className));

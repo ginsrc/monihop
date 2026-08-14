@@ -69,7 +69,6 @@ public partial class DisplaysPage : UserControl, IDisposable
         try
         {
             _profileService.Rename(display.StableId, dialog.DisplayName);
-            Refresh();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
@@ -98,7 +97,6 @@ public partial class DisplaysPage : UserControl, IDisposable
         try
         {
             _profileService.Forget(display.StableId);
-            Refresh();
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
