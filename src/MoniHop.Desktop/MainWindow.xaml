@@ -10,7 +10,7 @@
         <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
         <Border Background="{DynamicResource NavigationBackgroundBrush}" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
             <Grid Margin="16,18,16,14">
-                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="16"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="16"/><RowDefinition Height="*"/></Grid.RowDefinitions>
                 <Grid>
                     <Grid.ColumnDefinitions><ColumnDefinition Width="46"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <Viewbox x:Name="BrandMark" Width="38" Height="28"
@@ -58,10 +58,6 @@
                     <ListBox.ItemContainerStyle><Style TargetType="ListBoxItem" BasedOn="{StaticResource NavigationItemStyle}"><Setter Property="AutomationProperties.Name" Value="{Binding Label}"/></Style></ListBox.ItemContainerStyle>
                     <ListBox.ItemTemplate><DataTemplate><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="28"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock FontFamily="Segoe Fluent Icons" FontSize="17" Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" Text="{Binding Icon}"/><TextBlock Grid.Column="1" Style="{StaticResource BodyTextStyle}" Foreground="{Binding RelativeSource={RelativeSource AncestorType=ListBoxItem}, Path=Foreground}" Text="{Binding Label}"/></Grid></DataTemplate></ListBox.ItemTemplate>
                 </ListBox>
-                <Border Grid.Row="3" Margin="4,12,4,0" Padding="0,12,0,0"
-                        BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0">
-                    <TextBlock Style="{StaticResource CaptionTextStyle}" Text="0.1.0-alpha1"/>
-                </Border>
             </Grid>
         </Border>
         <ContentControl x:Name="PageHost" Grid.Column="1" Margin="34,28,18,26" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch"/>
