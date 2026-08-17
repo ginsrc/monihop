@@ -46,6 +46,56 @@ public sealed class GitHubUpdateCheckServiceTests
     }
 
     [Fact]
+    public async Task CheckAsync_ParsesMatchingInstallerAndChecksumAssets()
+    {
+        var client = Client(HttpStatusCode.OK, """
+            {
+              "tag_name": "v1.0.2",
+              "html_url": "https://github.com/ginsrc/monihop/releases/tag/v1.0.2",
+              "assets": [
+                {
+                  "name": "MoniHop-1.0.2-win-x64-setup.exe",
+                  "browser_download_url": "https://github.com/ginsrc/monihop/releases/download/v1.0.2/MoniHop-1.0.2-win-x64-setup.exe"
+                },
+                {
+                  "name": "SHA256SUMS.txt",
+                  "browser_download_url": "https://github.com/ginsrc/monihop/releases/download/v1.0.2/SHA256SUMS.txt"
+                }
+              ]
+            }
+            """);
+        var service = new GitHubUpdateCheckService(client, "1.0.1");
+
+        var result = await service.CheckAsync();
+
+        Assert.Equal(UpdateCheckStatus.UpdateAvailable, result.Status);
+        Assert.NotNull(result.InstallerPackage);
+        Assert.Equal(
+            "MoniHop-1.0.2-win-x64-setup.exe",
+            result.InstallerPackage!.InstallerFileName);
+        Assert.Equal(
+            new Uri("https://github.com/ginsrc/monihop/releases/download/v1.0.2/MoniHop-1.0.2-win-x64-setup.exe"),
+            result.InstallerPackage.InstallerUri);
+        Assert.Equal(
+            new Uri("https://github.com/ginsrc/monihop/releases/download/v1.0.2/SHA256SUMS.txt"),
+            result.InstallerPackage.ChecksumUri);
+    }
+
+    [Fact]
+    public async Task CheckAsync_MissingAssetsLeavesInstallerPackageUnavailable()
+    {
+        var client = Client(HttpStatusCode.OK, """
+            { "tag_name": "v1.0.2", "html_url": "https://github.com/ginsrc/monihop/releases/tag/v1.0.2", "assets": [] }
+            """);
+        var service = new GitHubUpdateCheckService(client, "1.0.1");
+
+        var result = await service.CheckAsync();
+
+        Assert.Equal(UpdateCheckStatus.UpdateAvailable, result.Status);
+        Assert.Null(result.InstallerPackage);
+    }
+
+    [Fact]
     public async Task CheckAsync_SameStableVersionIsUpToDate()
     {
         var client = Client(HttpStatusCode.OK, """
