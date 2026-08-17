@@ -13,11 +13,19 @@ public enum UpdateCheckStatus
     Failed,
 }
 
+public sealed record UpdateInstallerPackage(
+    string Version,
+    string InstallerFileName,
+    Uri InstallerUri,
+    string ChecksumFileName,
+    Uri ChecksumUri);
+
 public sealed record UpdateCheckResult(
     UpdateCheckStatus Status,
     string? LatestVersion = null,
     Uri? ReleaseUri = null,
-    string? ErrorMessage = null);
+    string? ErrorMessage = null,
+    UpdateInstallerPackage? InstallerPackage = null);
 
 public sealed class GitHubUpdateCheckService
 {
@@ -64,7 +72,7 @@ public sealed class GitHubUpdateCheckService
                     !release.TryGetProperty("prerelease", out var prerelease) || !prerelease.GetBoolean())
                 .Select(ParseRelease)
                 .Where(release => release is not null)
-                .Select(release => release!.Value)
+                .Select(release => release!)
                 .OrderByDescending(release => release.Version)
                 .ToArray();
             if (candidates.Length == 0)
@@ -74,7 +82,11 @@ public sealed class GitHubUpdateCheckService
 
             var latest = candidates[0];
             return latest.Version.CompareTo(current) > 0
-                ? new UpdateCheckResult(UpdateCheckStatus.UpdateAvailable, latest.Version.Display, latest.Uri)
+                ? new UpdateCheckResult(
+                    UpdateCheckStatus.UpdateAvailable,
+                    latest.Version.Display,
+                    latest.Uri,
+                    InstallerPackage: latest.InstallerPackage)
                 : new UpdateCheckResult(UpdateCheckStatus.UpToDate, current.Display, latest.Uri);
         }
         catch (Exception exception) when (
@@ -84,15 +96,64 @@ public sealed class GitHubUpdateCheckService
         }
     }
 
-    private static (SemanticVersion Version, Uri Uri)? ParseRelease(JsonElement release)
+    private static ReleaseMetadata? ParseRelease(JsonElement release)
     {
         var tag = release.TryGetProperty("tag_name", out var tagElement) ? tagElement.GetString() : null;
         var releaseUrl = release.TryGetProperty("html_url", out var uriElement) ? uriElement.GetString() : null;
         return SemanticVersion.TryParse(tag, out var version) &&
             Uri.TryCreate(releaseUrl, UriKind.Absolute, out var uri)
-            ? (version, uri)
+            ? new ReleaseMetadata(version, uri, ParseInstallerPackage(release, version))
             : null;
     }
+
+    private static UpdateInstallerPackage? ParseInstallerPackage(JsonElement release, SemanticVersion version)
+    {
+        if (!release.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        var installerFileName = $"MoniHop-{version.Display}-win-x64-setup.exe";
+        const string checksumFileName = "SHA256SUMS.txt";
+        string? installerUrl = null;
+        string? checksumUrl = null;
+        foreach (var asset in assets.EnumerateArray())
+        {
+            if (!asset.TryGetProperty("name", out var nameElement) ||
+                !asset.TryGetProperty("browser_download_url", out var urlElement))
+            {
+                continue;
+            }
+
+            var name = nameElement.GetString();
+            var url = urlElement.GetString();
+            if (string.Equals(name, installerFileName, StringComparison.Ordinal))
+            {
+                installerUrl = url;
+            }
+            else if (string.Equals(name, checksumFileName, StringComparison.Ordinal))
+            {
+                checksumUrl = url;
+            }
+        }
+
+        return Uri.TryCreate(installerUrl, UriKind.Absolute, out var installerUri) &&
+            Uri.TryCreate(checksumUrl, UriKind.Absolute, out var checksumUri) &&
+            installerUri.Scheme == Uri.UriSchemeHttps &&
+            checksumUri.Scheme == Uri.UriSchemeHttps
+            ? new UpdateInstallerPackage(
+                version.Display,
+                installerFileName,
+                installerUri,
+                checksumFileName,
+                checksumUri)
+            : null;
+    }
+
+    private sealed record ReleaseMetadata(
+        SemanticVersion Version,
+        Uri Uri,
+        UpdateInstallerPackage? InstallerPackage);
 
     private sealed record SemanticVersion(Version Core, string? Prerelease) : IComparable<SemanticVersion>
     {

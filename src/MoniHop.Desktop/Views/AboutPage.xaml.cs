@@ -20,20 +20,24 @@ public partial class AboutPage : UserControl
 {
     private readonly GeneralSettingsService _settings;
     private readonly GitHubUpdateCheckService _updates;
+    private readonly UpdateInstallerService _updateInstaller;
     private readonly LocalDiagnosticService _diagnostics;
     private readonly DisplayProfileService _displayProfiles;
     private readonly IProcessElevationService _elevation;
     private readonly LocalizationService _localization;
     private readonly DispatcherTimer _toastTimer;
+    private readonly bool _isPortable;
     private UpdateCheckResult? _lastUpdateResult;
     private Uri? _latestReleaseUri;
     private bool _checkingForUpdates;
+    private bool _installingUpdate;
     private bool _refreshing;
 
     public AboutPage(
         MoniHopPaths paths,
         GeneralSettingsService settings,
         GitHubUpdateCheckService updates,
+        UpdateInstallerService updateInstaller,
         LocalDiagnosticService diagnostics,
         DisplayProfileService displayProfiles,
         IProcessElevationService elevation,
@@ -42,10 +46,12 @@ public partial class AboutPage : UserControl
         ArgumentNullException.ThrowIfNull(paths);
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _updates = updates ?? throw new ArgumentNullException(nameof(updates));
+        _updateInstaller = updateInstaller ?? throw new ArgumentNullException(nameof(updateInstaller));
         _diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
         _displayProfiles = displayProfiles ?? throw new ArgumentNullException(nameof(displayProfiles));
         _elevation = elevation ?? throw new ArgumentNullException(nameof(elevation));
         _localization = localization ?? throw new ArgumentNullException(nameof(localization));
+        _isPortable = paths.IsPortable;
 
         Version = ProductInfo.Version;
         OperatingSystem = RuntimeInformation.OSDescription;
@@ -179,6 +185,14 @@ public partial class AboutPage : UserControl
     private void RenderUpdateStatus()
     {
         OpenUpdateButton.Visibility = Visibility.Collapsed;
+        OpenUpdateButton.IsEnabled = true;
+        CheckUpdatesButton.IsEnabled = !_installingUpdate;
+        if (_installingUpdate)
+        {
+            UpdateStatusText.Text = _localization.Get("String.About.Update.Installing");
+            return;
+        }
+
         if (_checkingForUpdates)
         {
             UpdateStatusText.Text = _localization.Get("String.About.Update.Checking");
@@ -206,16 +220,68 @@ public partial class AboutPage : UserControl
         if (_latestReleaseUri is not null &&
             _lastUpdateResult.Status == UpdateCheckStatus.UpdateAvailable)
         {
+            OpenUpdateButton.Content = _localization.Get(
+                CanInstallUpdate
+                    ? "String.About.Update.DownloadInstall"
+                    : "String.About.Update.OpenRelease");
             OpenUpdateButton.Visibility = Visibility.Visible;
         }
     }
 
-    private void OpenUpdateButton_OnClick(object sender, RoutedEventArgs e)
+    private async void OpenUpdateButton_OnClick(object sender, RoutedEventArgs e)
     {
+        if (CanInstallUpdate)
+        {
+            await InstallUpdateAsync(_lastUpdateResult!.InstallerPackage!);
+            return;
+        }
+
         if (_latestReleaseUri is not null)
         {
             OpenUri(_latestReleaseUri);
         }
+    }
+
+    private bool CanInstallUpdate =>
+        !_isPortable &&
+        _lastUpdateResult?.Status == UpdateCheckStatus.UpdateAvailable &&
+        _lastUpdateResult.InstallerPackage is not null;
+
+    private async Task InstallUpdateAsync(UpdateInstallerPackage package)
+    {
+        if (_installingUpdate)
+        {
+            return;
+        }
+
+        _installingUpdate = true;
+        OpenUpdateButton.IsEnabled = false;
+        RenderUpdateStatus();
+        UpdateInstallResult result;
+        try
+        {
+            result = await _updateInstaller.DownloadVerifyAndLaunchAsync(package);
+        }
+        finally
+        {
+            _installingUpdate = false;
+        }
+
+        if (result.Status == UpdateInstallStatus.Started)
+        {
+            Application.Current.Shutdown();
+            return;
+        }
+
+        RenderUpdateStatus();
+        var messageKey = result.Failure switch
+        {
+            UpdateInstallFailure.ChecksumMissing or UpdateInstallFailure.ChecksumMismatch =>
+                "String.About.Update.ChecksumFailed",
+            UpdateInstallFailure.LaunchFailed => "String.About.Update.LaunchFailed",
+            _ => "String.About.Update.InstallFailed",
+        };
+        ShowToast(_localization.Get(messageKey), isError: true);
     }
 
     private void DetailedDiagnosticsToggle_OnClick(object sender, RoutedEventArgs e)

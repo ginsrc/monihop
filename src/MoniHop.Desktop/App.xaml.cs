@@ -23,7 +23,8 @@ namespace MoniHop.Desktop;
 public partial class App : Application
 {
     private SingleInstanceCoordinator? _singleInstance;
-    private HttpClient? _httpClient;
+    private HttpClient? _updateCheckHttpClient;
+    private HttpClient? _updateDownloadHttpClient;
     private LocalDiagnosticService? _diagnostics;
 
     protected override void OnStartup(StartupEventArgs e)
@@ -100,8 +101,12 @@ public partial class App : Application
                 new JsonWindowProjectionStore(paths.WindowProjectionFile));
             var hotKeySettings = new HotKeySettingsService(
                 new JsonHotKeyStore(paths.HotKeysFile));
-            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
-            var updateCheckService = new GitHubUpdateCheckService(_httpClient, ProductInfo.Version);
+            _updateCheckHttpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            _updateDownloadHttpClient = new HttpClient { Timeout = TimeSpan.FromMinutes(10) };
+            var updateCheckService = new GitHubUpdateCheckService(_updateCheckHttpClient, ProductInfo.Version);
+            var updateInstallerService = new UpdateInstallerService(
+                _updateDownloadHttpClient,
+                new NativeUpdateInstallerLauncher());
             var projectionShortcutService = new WindowProjectionShortcutService(
                 displayCatalog,
                 nativeWindowController,
@@ -144,6 +149,7 @@ public partial class App : Application
                 localization,
                 offscreenWindowRecallService,
                 updateCheckService,
+                updateInstallerService,
                 _diagnostics,
                 paths);
             MainWindow = mainWindow;
@@ -179,7 +185,8 @@ public partial class App : Application
     protected override void OnExit(ExitEventArgs e)
     {
         _diagnostics?.Write("shutdown", "MoniHop is exiting.");
-        _httpClient?.Dispose();
+        _updateCheckHttpClient?.Dispose();
+        _updateDownloadHttpClient?.Dispose();
         _singleInstance?.Dispose();
         base.OnExit(e);
     }

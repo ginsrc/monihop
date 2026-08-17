@@ -77,6 +77,7 @@ public partial class MainWindow : Window
         LocalizationService localizationService,
         OffscreenWindowRecallService offscreenWindowRecallService,
         GitHubUpdateCheckService updateCheckService,
+        UpdateInstallerService updateInstallerService,
         LocalDiagnosticService diagnostics,
         MoniHopPaths paths)
     {
@@ -97,6 +98,7 @@ public partial class MainWindow : Window
         _localization = localizationService ?? throw new ArgumentNullException(nameof(localizationService));
         _offscreenWindowRecallService = offscreenWindowRecallService ?? throw new ArgumentNullException(nameof(offscreenWindowRecallService));
         ArgumentNullException.ThrowIfNull(updateCheckService);
+        ArgumentNullException.ThrowIfNull(updateInstallerService);
         _diagnostics = diagnostics ?? throw new ArgumentNullException(nameof(diagnostics));
         ArgumentNullException.ThrowIfNull(paths);
 
@@ -135,6 +137,7 @@ public partial class MainWindow : Window
             paths,
             _generalSettings,
             updateCheckService,
+            updateInstallerService,
             _diagnostics,
             _displayProfileService,
             _processElevation,

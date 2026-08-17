@@ -71,7 +71,7 @@
     <sys:String x:Key="String.About.Update.Check">Check for updates</sys:String>
     <sys:String x:Key="String.About.Update.Automatic">Check automatically at startup</sys:String>
     <sys:String x:Key="String.About.Update.AutomaticDescription">Make at most one version request each time MoniHop starts. Off by default.</sys:String>
-    <sys:String x:Key="String.About.Update.SecurityNote">MoniHop currently checks versions and opens release pages only. It does not download or install unsigned builds automatically.</sys:String>
+    <sys:String x:Key="String.About.Update.SecurityNote">Installed builds download the matching installer, verify its SHA-256, then open the visible setup program. Portable builds continue to the release page.</sys:String>
     <sys:String x:Key="String.About.Update.NotChecked">Updates have not been checked</sys:String>
     <sys:String x:Key="String.About.Update.Checking">Checking GitHub Releases…</sys:String>
     <sys:String x:Key="String.About.Update.Available">Version {0} is available</sys:String>
@@ -79,6 +79,11 @@
     <sys:String x:Key="String.About.Update.NoRelease">No GitHub Release has been published yet</sys:String>
     <sys:String x:Key="String.About.Update.Failed">Updates cannot be checked right now. Try again later.</sys:String>
     <sys:String x:Key="String.About.Update.OpenRelease">View update</sys:String>
+    <sys:String x:Key="String.About.Update.DownloadInstall">Download and install</sys:String>
+    <sys:String x:Key="String.About.Update.Installing">Downloading the installer and verifying its integrity…</sys:String>
+    <sys:String x:Key="String.About.Update.InstallFailed">The update could not be downloaded. Check your connection and try again.</sys:String>
+    <sys:String x:Key="String.About.Update.ChecksumFailed">Installer integrity verification failed, so it was not run.</sys:String>
+    <sys:String x:Key="String.About.Update.LaunchFailed">The installer could not be started. Download it from the release page instead.</sys:String>
     <sys:String x:Key="String.About.Diagnostics.Section">Runtime information and local diagnostics</sys:String>
     <sys:String x:Key="String.About.Diagnostics.Description">Diagnostic data stays on this device and never records window titles, window content, keyboard input, clipboard data, or user files.</sys:String>
     <sys:String x:Key="String.About.Diagnostics.Windows">Windows</sys:String>
