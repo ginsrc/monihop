@@ -316,6 +316,26 @@ public sealed class WindowProjectionRuntimeTests
     }
 
     [Fact]
+    public async Task DraggedWindowDisappears_AbortsSessionAndAllowsNextDrag()
+    {
+        var source = new FakeMoveSizeSource();
+        var overlay = new FakeOverlay();
+        var controller = new FakeWindowController();
+        using var runtime = Create(source, overlay, controller, Settings());
+
+        source.Raise(WindowMoveSizeEventKind.Started, 42);
+        await WaitFor(() => overlay.PortalShowCount == 1);
+        controller.IsWindowAvailable = false;
+        await WaitFor(() => overlay.HideCount == 1);
+
+        controller.IsWindowAvailable = true;
+        source.Raise(WindowMoveSizeEventKind.Started, 43);
+        await WaitFor(() => overlay.PortalShowCount == 2);
+
+        Assert.Equal(2, overlay.PortalShowCount);
+    }
+
+    [Fact]
     public void Dispose_ReleasesEventSourceAndOverlay()
     {
         var source = new FakeMoveSizeSource();
@@ -398,6 +418,7 @@ public sealed class WindowProjectionRuntimeTests
 
     private sealed class FakeWindowController : IApplicationWindowController
     {
+        public bool IsWindowAvailable { get; set; } = true;
         public Exception? MoveError { get; init; }
         public WindowPlacementSnapshot InitialPlacement { get; init; } = new(
             1,
@@ -411,6 +432,11 @@ public sealed class WindowProjectionRuntimeTests
         public ApplicationProjectionPlan? Plan { get; private set; }
         public ApplicationWindowSnapshot? Read(nint windowHandle)
         {
+            if (!IsWindowAvailable)
+            {
+                return null;
+            }
+
             var placement = ReadCount++ == 0
                 ? InitialPlacement
                 : ReleasePlacement ?? InitialPlacement;

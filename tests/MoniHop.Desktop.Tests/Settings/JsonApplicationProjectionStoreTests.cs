@@ -41,6 +41,20 @@ public sealed class JsonApplicationProjectionStoreTests : IDisposable
         Assert.Equal(Assert.Single(settings.Rules), Assert.Single(loaded.Rules));
     }
 
+    [Fact]
+    public void Load_InvalidJson_QuarantinesOriginalAndReturnsDefault()
+    {
+        Directory.CreateDirectory(_directory);
+        var path = Path.Combine(_directory, "application-projection.json");
+        File.WriteAllText(path, "{broken");
+
+        var loaded = new JsonApplicationProjectionStore(path).Load();
+
+        Assert.Equal(ApplicationProjectionSettings.Default, loaded);
+        Assert.False(File.Exists(path));
+        Assert.Single(Directory.GetFiles(_directory, "application-projection.json.corrupt-*.json"));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))

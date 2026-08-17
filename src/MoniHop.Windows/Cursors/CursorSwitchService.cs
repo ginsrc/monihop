@@ -9,15 +9,18 @@ public sealed class CursorSwitchService
     private readonly IDisplayCatalog _displayCatalog;
     private readonly ICursorController _cursorController;
     private readonly CursorSwitchPlanner _planner;
+    private readonly Func<CursorLandingMode> _landingMode;
 
     public CursorSwitchService(
         IDisplayCatalog displayCatalog,
         ICursorController cursorController,
-        CursorSwitchPlanner? planner = null)
+        CursorSwitchPlanner? planner = null,
+        Func<CursorLandingMode>? landingMode = null)
     {
         _displayCatalog = displayCatalog ?? throw new ArgumentNullException(nameof(displayCatalog));
         _cursorController = cursorController ?? throw new ArgumentNullException(nameof(cursorController));
         _planner = planner ?? new CursorSwitchPlanner();
+        _landingMode = landingMode ?? (() => CursorLandingMode.Relative);
     }
 
     public CursorSwitchResult SwitchNext() => Switch(DisplayDirection.Next);
@@ -26,7 +29,7 @@ public sealed class CursorSwitchService
     {
         var displays = _displayCatalog.ReadAll();
         var currentPosition = _cursorController.GetPosition();
-        var targetPosition = _planner.Plan(displays, currentPosition, direction);
+        var targetPosition = _planner.Plan(displays, currentPosition, direction, _landingMode());
 
         if (targetPosition is null)
         {

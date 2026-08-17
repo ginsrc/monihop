@@ -39,6 +39,20 @@ public sealed class JsonDisplayProfileStoreTests : IDisposable
         Assert.Empty(store.Load());
     }
 
+    [Fact]
+    public void Load_InvalidJson_QuarantinesOriginalAndReturnsEmpty()
+    {
+        Directory.CreateDirectory(_directory);
+        var path = Path.Combine(_directory, "display-profiles.json");
+        File.WriteAllText(path, "{broken");
+
+        var loaded = new JsonDisplayProfileStore(path).Load();
+
+        Assert.Empty(loaded);
+        Assert.False(File.Exists(path));
+        Assert.Single(Directory.GetFiles(_directory, "display-profiles.json.corrupt-*.json"));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_directory))

@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using MoniHop.Desktop.Models;
+using MoniHop.Desktop.Notifications;
 using MoniHop.Desktop.Settings;
 
 namespace MoniHop.Desktop.Views;
@@ -13,15 +14,18 @@ namespace MoniHop.Desktop.Views;
 public partial class HotKeysPage : UserControl
 {
     private readonly HotKeySettingsService _settingsService;
+    private readonly GeneralSettingsService _generalSettings;
     private HotKeyStatusViewModel? _capturing;
 
     public HotKeysPage(
         ObservableCollection<HotKeyStatusViewModel> hotKeys,
-        HotKeySettingsService settingsService)
+        HotKeySettingsService settingsService,
+        GeneralSettingsService generalSettings)
     {
         InitializeComponent();
         HotKeys = hotKeys ?? throw new ArgumentNullException(nameof(hotKeys));
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
+        _generalSettings = generalSettings ?? throw new ArgumentNullException(nameof(generalSettings));
         GroupedHotKeys = CollectionViewSource.GetDefaultView(HotKeys);
         GroupedHotKeys.GroupDescriptions.Add(new PropertyGroupDescription(nameof(HotKeyStatusViewModel.Category)));
         DataContext = this;
@@ -145,6 +149,14 @@ public partial class HotKeysPage : UserControl
 
     private void ShowNotice(string message, bool isError)
     {
+        if (!UserNotificationPolicy.ShouldShow(
+                _generalSettings.Current.ShowSuccessNotifications,
+                isError ? UserNotificationSeverity.Error : UserNotificationSeverity.Success))
+        {
+            CaptureNotice.Visibility = Visibility.Collapsed;
+            return;
+        }
+
         CaptureNoticeText.Text = message;
         CaptureNoticeText.Foreground = isError
             ? (System.Windows.Media.Brush)FindResource("ErrorBrush")

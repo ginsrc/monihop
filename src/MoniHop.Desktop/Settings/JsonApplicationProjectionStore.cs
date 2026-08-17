@@ -26,9 +26,17 @@ public sealed class JsonApplicationProjectionStore : IApplicationProjectionStore
             return ApplicationProjectionSettings.Default;
         }
 
-        using var stream = File.OpenRead(FilePath);
-        return JsonSerializer.Deserialize<ApplicationProjectionSettings>(stream, SerializerOptions) ??
-            ApplicationProjectionSettings.Default;
+        try
+        {
+            using var stream = File.OpenRead(FilePath);
+            return JsonSerializer.Deserialize<ApplicationProjectionSettings>(stream, SerializerOptions) ??
+                throw new JsonException("Application projection settings are empty.");
+        }
+        catch (Exception exception) when (exception is JsonException or ArgumentException)
+        {
+            JsonStoreRecovery.QuarantineCorruptFile(FilePath);
+            return ApplicationProjectionSettings.Default;
+        }
     }
 
     public void Save(ApplicationProjectionSettings settings)

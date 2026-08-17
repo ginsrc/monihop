@@ -7,7 +7,7 @@
                   VerticalScrollBarVisibility="Auto">
         <StackPanel>
             <TextBlock Style="{StaticResource PageTitleStyle}" Text="显示器" />
-            <TextBlock Margin="0,8,0,22" Style="{StaticResource SecondaryTextStyle}"
+            <TextBlock Margin="0,6,0,22" Style="{StaticResource PageSubtitleStyle}"
                        Text="查看当前系统识别到的显示器及基础信息。" />
 
             <Border Style="{StaticResource SurfaceSectionStyle}">
@@ -23,7 +23,7 @@
                                         Background="{StaticResource BrandSubtleBrush}"
                                         BorderBrush="{StaticResource BrandBrush}" BorderThickness="1" CornerRadius="5">
                                     <StackPanel>
-                                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                                         <TextBlock Margin="0,8,0,0" Text="{Binding ScreenLabel}" />
                                         <TextBlock Margin="0,4,0,0" Style="{StaticResource SecondaryTextStyle}" Text="{Binding PrimaryStatus}" />
                                     </StackPanel>
@@ -63,7 +63,7 @@
                 </ListView.ItemContainerStyle>
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="显示器名称" Width="140"><GridViewColumn.CellTemplate><DataTemplate><TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" /></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                        <GridViewColumn Header="显示器名称" Width="140"><GridViewColumn.CellTemplate><DataTemplate><TextBlock VerticalAlignment="Center" Style="{StaticResource FieldLabelStyle}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip="{Binding Name}" /></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                         <GridViewColumn Header="属性" Width="110" DisplayMemberBinding="{Binding PrimaryStatus}" />
                         <GridViewColumn Header="分辨率" Width="105" DisplayMemberBinding="{Binding Resolution}" />
                         <GridViewColumn Header="刷新率" Width="70" DisplayMemberBinding="{Binding RefreshRate}" />

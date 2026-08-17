@@ -81,6 +81,24 @@ public sealed class CursorSwitchPlannerTests
     }
 
     [Fact]
+    public void Plan_CenterLandingUsesTargetDisplayCenter()
+    {
+        var displays = new[]
+        {
+            Display("DISPLAY1", new PixelRect(0, 0, 100, 100)),
+            Display("DISPLAY2", new PixelRect(100, -50, 300, 150)),
+        };
+
+        var result = new CursorSwitchPlanner().Plan(
+            displays,
+            new PixelPoint(25, 25),
+            DisplayDirection.Next,
+            CursorLandingMode.Center);
+
+        Assert.Equal(new PixelPoint(200, 50), result);
+    }
+
+    [Fact]
     public void PlanCenter_ReturnsCenterOfDisplayContainingCursor()
     {
         var displays = new[]

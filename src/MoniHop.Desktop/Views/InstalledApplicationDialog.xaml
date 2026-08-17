@@ -12,7 +12,7 @@
             <RowDefinition Height="18" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock FontSize="19" FontWeight="SemiBold" Text="选择已安装应用" />
+        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="选择已安装应用" />
         <TextBlock Grid.Row="1" Margin="0,6,0,0" Style="{StaticResource SecondaryTextStyle}"
                    Text="从 Windows 应用列表选择；桌面应用和 Microsoft Store 应用均可建立规则。" />
         <ListBox x:Name="ApplicationsList" Grid.Row="3" ItemsSource="{Binding Applications}"
@@ -21,8 +21,8 @@
                 <DataTemplate>
                     <Grid Margin="4,5">
                         <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                        <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding DisplayName}" />
-                        <TextBlock Grid.Row="1" Margin="0,3,0,0" FontSize="12" Style="{StaticResource SecondaryTextStyle}"
+                        <TextBlock Style="{StaticResource CardTitleStyle}" Text="{Binding DisplayName}" />
+                        <TextBlock Grid.Row="1" Margin="0,3,0,0" Style="{StaticResource CaptionTextStyle}"
                                    Text="{Binding Identity.Value}" TextTrimming="CharacterEllipsis" />
                     </Grid>
                 </DataTemplate>

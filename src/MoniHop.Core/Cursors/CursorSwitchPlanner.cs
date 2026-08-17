@@ -13,7 +13,8 @@ public sealed class CursorSwitchPlanner
     public PixelPoint? Plan(
         IReadOnlyList<DisplaySnapshot> displays,
         PixelPoint currentPosition,
-        DisplayDirection direction)
+        DisplayDirection direction,
+        CursorLandingMode landingMode = CursorLandingMode.Relative)
     {
         ArgumentNullException.ThrowIfNull(displays);
 
@@ -40,6 +41,13 @@ public sealed class CursorSwitchPlanner
         var source = orderedDisplays[sourceIndex].Bounds;
         var targetIndex = (sourceIndex + (int)direction + orderedDisplays.Length) % orderedDisplays.Length;
         var target = orderedDisplays[targetIndex].Bounds;
+        if (landingMode == CursorLandingMode.Center)
+        {
+            return new PixelPoint(
+                target.Left + (target.Width / 2),
+                target.Top + (target.Height / 2));
+        }
+
         var relativeX = (double)(currentPosition.X - source.Left) / source.Width;
         var relativeY = (double)(currentPosition.Y - source.Top) / source.Height;
         var mappedX = target.Left + (int)Math.Floor(relativeX * target.Width);

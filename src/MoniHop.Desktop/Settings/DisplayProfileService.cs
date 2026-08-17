@@ -18,6 +18,10 @@ public sealed class DisplayProfileService
 
     public event EventHandler? Changed;
 
+    public event EventHandler? TopologyChanged;
+
+    public event EventHandler? ProfilesChanged;
+
     public DisplayProfileRefreshResult Refresh()
     {
         var profiles = _states.Count == 0
@@ -28,9 +32,23 @@ public sealed class DisplayProfileService
             _displayCatalog.ReadAll(),
             DateTimeOffset.UtcNow);
 
-        _store.Save(updated.Select(state => state.Profile).ToArray());
+        var stateChanged = HasStateChanged(_states, updated);
+        var topologyChanged = HasWorkspaceChanged(_states, updated);
+        if (stateChanged || _states.Count == 0)
+        {
+            _store.Save(updated.Select(state => state.Profile).ToArray());
+        }
+
         _states = updated;
-        Changed?.Invoke(this, EventArgs.Empty);
+        if (stateChanged || _states.Count == 0)
+        {
+            Changed?.Invoke(this, EventArgs.Empty);
+        }
+
+        if (topologyChanged || _states.Count == 0)
+        {
+            TopologyChanged?.Invoke(this, EventArgs.Empty);
+        }
         return new DisplayProfileRefreshResult(_states);
     }
 
@@ -48,6 +66,7 @@ public sealed class DisplayProfileService
                 .ToArray(),
             DateTimeOffset.UtcNow);
         Changed?.Invoke(this, EventArgs.Empty);
+        ProfilesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void Forget(string stableId)
@@ -72,6 +91,61 @@ public sealed class DisplayProfileService
             .Where(item => !StringComparer.OrdinalIgnoreCase.Equals(item.Profile.StableId, stableId))
             .ToArray();
         Changed?.Invoke(this, EventArgs.Empty);
+        ProfilesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static bool HasStateChanged(
+        IReadOnlyList<DisplayProfileState> previous,
+        IReadOnlyList<DisplayProfileState> current)
+    {
+        if (previous.Count != current.Count)
+        {
+            return true;
+        }
+
+        var before = previous.ToDictionary(state => state.Profile.StableId, StringComparer.OrdinalIgnoreCase);
+        foreach (var state in current)
+        {
+            if (!before.TryGetValue(state.Profile.StableId, out var oldState) ||
+                oldState.IsConnected != state.IsConnected ||
+                !string.Equals(oldState.Profile.LastSystemName, state.Profile.LastSystemName, StringComparison.Ordinal) ||
+                !string.Equals(oldState.Profile.LastResolution, state.Profile.LastResolution, StringComparison.Ordinal) ||
+                oldState.Profile.LastRefreshRateHz != state.Profile.LastRefreshRateHz ||
+                oldState.Profile.LastScalePercent != state.Profile.LastScalePercent ||
+                oldState.Profile.LastOrientation != state.Profile.LastOrientation ||
+                oldState.Profile.LastPhysicalWidthMillimeters != state.Profile.LastPhysicalWidthMillimeters ||
+                oldState.Profile.LastPhysicalHeightMillimeters != state.Profile.LastPhysicalHeightMillimeters)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasWorkspaceChanged(
+        IReadOnlyList<DisplayProfileState> previous,
+        IReadOnlyList<DisplayProfileState> current)
+    {
+        if (previous.Count != current.Count)
+        {
+            return true;
+        }
+
+        var before = previous.ToDictionary(state => state.Profile.StableId, StringComparer.OrdinalIgnoreCase);
+        foreach (var state in current)
+        {
+            if (!before.TryGetValue(state.Profile.StableId, out var oldState) ||
+                oldState.IsConnected != state.IsConnected ||
+                oldState.CurrentDisplay?.Bounds != state.CurrentDisplay?.Bounds ||
+                oldState.CurrentDisplay?.WorkingArea != state.CurrentDisplay?.WorkingArea ||
+                oldState.CurrentDisplay?.IsPrimary != state.CurrentDisplay?.IsPrimary)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public IReadOnlyList<DisplaySnapshot> ApplyNames(IReadOnlyList<DisplaySnapshot> displays)

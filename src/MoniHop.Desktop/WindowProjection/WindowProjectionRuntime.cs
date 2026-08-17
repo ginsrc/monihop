@@ -226,6 +226,12 @@ public sealed class WindowProjectionRuntime : IDisposable
                         return;
                     }
 
+                    if (_windowController.Read(_draggedWindow) is null)
+                    {
+                        AbortSession();
+                        return;
+                    }
+
                     var point = ReadPointer();
                     if (_state == OverlayState.PortalVisible)
                     {
@@ -257,6 +263,11 @@ public sealed class WindowProjectionRuntime : IDisposable
             }
             catch (Win32Exception)
             {
+                lock (_gate)
+                {
+                    AbortSession();
+                }
+
                 return;
             }
         }
@@ -368,6 +379,12 @@ public sealed class WindowProjectionRuntime : IDisposable
         _command = null;
         _lastHit = WindowProjectionHit.None;
         _state = OverlayState.Hidden;
+    }
+
+    private void AbortSession()
+    {
+        StopPolling();
+        ResetSession(hideOverlay: true);
     }
 
     private void StopPolling()

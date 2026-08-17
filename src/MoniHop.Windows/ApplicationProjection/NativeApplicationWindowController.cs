@@ -109,7 +109,7 @@ public sealed class NativeApplicationWindowController : IApplicationWindowContro
         if (current.IsMaximized &&
             plan.Layout is ProjectionLayout.LeftHalf or ProjectionLayout.RightHalf)
         {
-            _ = ShowWindowAsync(windowHandle, SwRestore);
+            _ = ShowWindow(windowHandle, SwRestore);
         }
 
         var showCommand = plan.Layout == ProjectionLayout.KeepSize
@@ -124,7 +124,7 @@ public sealed class NativeApplicationWindowController : IApplicationWindowContro
 
         if (plan.ShouldMaximize)
         {
-            _ = ShowWindowAsync(windowHandle, SwMaximize);
+            _ = ShowWindow(windowHandle, SwMaximize);
         }
     }
 
@@ -296,7 +296,7 @@ public sealed class NativeApplicationWindowController : IApplicationWindowContro
 
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool ShowWindowAsync(nint windowHandle, int command);
+    private static extern bool ShowWindow(nint windowHandle, int command);
 
     [DllImport("kernel32.dll", SetLastError = true)]
     private static extern Microsoft.Win32.SafeHandles.SafeProcessHandle OpenProcess(

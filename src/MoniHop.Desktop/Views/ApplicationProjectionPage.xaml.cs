@@ -8,6 +8,7 @@ using System.Windows.Threading;
 using MoniHop.Core.ApplicationProjection;
 using MoniHop.Desktop.ApplicationProjection;
 using MoniHop.Desktop.Models;
+using MoniHop.Desktop.Notifications;
 using MoniHop.Desktop.Settings;
 using MoniHop.Windows.ApplicationProjection;
 using ProjectionApplicationIdentity = MoniHop.Core.ApplicationProjection.ApplicationIdentity;
@@ -20,6 +21,7 @@ public partial class ApplicationProjectionPage : UserControl
     private readonly DisplayProfileService _displayProfileService;
     private readonly IApplicationWindowController _windowController;
     private readonly IInstalledApplicationCatalog _installedApplicationCatalog;
+    private readonly GeneralSettingsService _generalSettings;
     private readonly DispatcherTimer _toastTimer;
     private string? _primaryDisplayId;
     private bool _isApplyingState;
@@ -28,12 +30,14 @@ public partial class ApplicationProjectionPage : UserControl
         ApplicationProjectionSettingsService settingsService,
         DisplayProfileService displayProfileService,
         IApplicationWindowController windowController,
-        IInstalledApplicationCatalog installedApplicationCatalog)
+        IInstalledApplicationCatalog installedApplicationCatalog,
+        GeneralSettingsService generalSettings)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _displayProfileService = displayProfileService ?? throw new ArgumentNullException(nameof(displayProfileService));
         _windowController = windowController ?? throw new ArgumentNullException(nameof(windowController));
         _installedApplicationCatalog = installedApplicationCatalog ?? throw new ArgumentNullException(nameof(installedApplicationCatalog));
+        _generalSettings = generalSettings ?? throw new ArgumentNullException(nameof(generalSettings));
         Layouts = new ObservableCollection<ProjectionLayoutViewModel>
         {
             new(ProjectionLayout.KeepSize, "保持尺寸"),
@@ -372,6 +376,16 @@ public partial class ApplicationProjectionPage : UserControl
 
     private void ShowToast(string message, bool isError = false, bool isWarning = false)
     {
+        var severity = isError
+            ? UserNotificationSeverity.Error
+            : isWarning
+                ? UserNotificationSeverity.Warning
+                : UserNotificationSeverity.Success;
+        if (!UserNotificationPolicy.ShouldShow(_generalSettings.Current.ShowSuccessNotifications, severity))
+        {
+            return;
+        }
+
         ToastText.Text = message;
         ToastIndicator.Fill = (Brush)FindResource(isError ? "ErrorBrush" : isWarning ? "WarningBrush" : "SuccessBrush");
         ActionToast.Visibility = Visibility.Visible;

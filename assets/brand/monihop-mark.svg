@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1024 1024"
+     role="img"
+     aria-labelledby="title description">
+  <title id="title">MoniHop mark</title>
+  <desc id="description">A geometric M and H joined by a blue stepped display-hop path.</desc>
+
+  <defs>
+    <linearGradient id="m-fill" x1="140" y1="276" x2="519" y2="746"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#171A1F" />
+      <stop offset="1" stop-color="#24282E" />
+    </linearGradient>
+    <linearGradient id="h-fill" x1="452" y1="276" x2="884" y2="746"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4A505A" />
+      <stop offset="1" stop-color="#343840" />
+    </linearGradient>
+    <linearGradient id="hop-fill" x1="416" y1="462" x2="632" y2="605"
+                    gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B63E6" />
+      <stop offset="1" stop-color="#0B4FD7" />
+    </linearGradient>
+
+    <mask id="hop-clearance" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="white" />
+      <path d="M536 462H632V545H610V605H416V552H536Z"
+            fill="black"
+            stroke="black"
+            stroke-width="26"
+            stroke-linejoin="miter" />
+    </mask>
+  </defs>
+
+  <g mask="url(#hop-clearance)">
+    <path fill="url(#m-fill)"
+          d="M140 276H223L371 447L517 276H519V535H402V605H371L240 455V746H140Z" />
+    <path fill="url(#h-fill)"
+          d="M518 276H617V447H518Z
+             M632 460H783V276H884V746H783V545H632Z
+             M452 621H617V746H452Z" />
+  </g>
+
+  <path fill="url(#hop-fill)"
+        d="M536 462H632V545H610V605H416V552H536Z" />
+</svg>

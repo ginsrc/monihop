@@ -6,6 +6,7 @@ using System.Windows.Threading;
 using MoniHop.Core.ApplicationProjection;
 using MoniHop.Core.WindowProjection;
 using MoniHop.Desktop.Models;
+using MoniHop.Desktop.Notifications;
 using MoniHop.Desktop.Settings;
 using MoniHop.Desktop.WindowProjection;
 
@@ -15,6 +16,7 @@ public partial class ProjectionPage : UserControl
 {
     private readonly WindowProjectionSettingsService _settingsService;
     private readonly DisplayProfileService _displayProfileService;
+    private readonly GeneralSettingsService _generalSettings;
     private readonly DispatcherTimer _toastTimer;
     private bool _isDragging;
     private bool _isApplyingState;
@@ -22,10 +24,12 @@ public partial class ProjectionPage : UserControl
 
     public ProjectionPage(
         WindowProjectionSettingsService settingsService,
-        DisplayProfileService displayProfileService)
+        DisplayProfileService displayProfileService,
+        GeneralSettingsService generalSettings)
     {
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
         _displayProfileService = displayProfileService ?? throw new ArgumentNullException(nameof(displayProfileService));
+        _generalSettings = generalSettings ?? throw new ArgumentNullException(nameof(generalSettings));
         InitializeComponent();
         _toastTimer = new DispatcherTimer(DispatcherPriority.Background, Dispatcher)
         {
@@ -46,6 +50,13 @@ public partial class ProjectionPage : UserControl
         void Show()
         {
             var failed = result.Status == WindowProjectionRuntimeStatus.Failed;
+            if (!UserNotificationPolicy.ShouldShow(
+                    _generalSettings.Current.ShowSuccessNotifications,
+                    failed ? UserNotificationSeverity.Error : UserNotificationSeverity.Success))
+            {
+                return;
+            }
+
             ToastText.Text = failed
                 ? "窗口投放失败：可能是权限不足或窗口已失效。"
                 : "窗口已投放。";

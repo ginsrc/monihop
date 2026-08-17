@@ -26,8 +26,17 @@ public sealed class JsonDisplayProfileStore : IDisplayProfileStore
             return [];
         }
 
-        using var stream = File.OpenRead(FilePath);
-        return JsonSerializer.Deserialize<DisplayProfile[]>(stream, SerializerOptions) ?? [];
+        try
+        {
+            using var stream = File.OpenRead(FilePath);
+            return JsonSerializer.Deserialize<DisplayProfile[]>(stream, SerializerOptions) ??
+                throw new JsonException("Display profile settings are empty.");
+        }
+        catch (Exception exception) when (exception is JsonException or ArgumentException)
+        {
+            JsonStoreRecovery.QuarantineCorruptFile(FilePath);
+            return [];
+        }
     }
 
     public void Save(IReadOnlyList<DisplayProfile> profiles)

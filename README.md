@@ -1,56 +1,105 @@
+<p align="center">
+  <img src="assets/brand/monihop-mark.svg" width="96" alt="MoniHop logo">
+</p>
+
 # MoniHop（跃屏）
 
-MoniHop 是面向 Windows 11 多显示器环境的本地窗口调度工具。
+MoniHop 是一款面向 Windows 11 多显示器环境的开源窗口调度工具。它在本机运行，用于快速切换鼠标和窗口、按应用分配新窗口的目标显示器，以及通过拖拽投放层移动窗口。
 
-## 当前状态
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+![Platform](https://img.shields.io/badge/Platform-Windows%2011-0078D4)
+![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)
 
-当前仓库处于 `0.1.0-alpha1`。正式 WPF 设置界面已迁移六页信息架构，已接入本机显示器枚举、真实显示参数、插拔与显示设置变化自动刷新、显示器历史记录和自定义名称，以及鼠标快捷切屏、当前窗口上一/下一屏切换、新窗口自动投放和默认关闭的顶部窗口投放层；托盘运行态仍在后续功能切片中。
+## 功能
 
-正式界面不会把未实现能力伪装成可用功能。快捷键页当前列出的动作均已接入真实执行能力；其他页面尚未接入的设置仍会显示“待开发”并禁用操作。原型只保留在内部文档中作为历史设计证据，不参与正式构建。
+- 实时识别显示器连接、分辨率、刷新率、缩放、方向和物理尺寸。
+- 记录连接过的显示器，并使用稳定设备标识恢复名称、规则和快捷键。
+- 使用全局快捷键在显示器间切换鼠标或当前窗口。
+- 为不同应用设置新窗口的目标显示器和窗口布局。
+- 将窗口拖到顶部投放口，临时选择目标显示器和布局。
+- 支持保持尺寸、最大化、左半屏和右半屏四种投放布局。
+- 召回完全位于所有显示器工作区之外的普通窗口。
+- 支持托盘运行、开机启动、浅色/深色主题和本地诊断。
 
-应用投放默认关闭。开启后可跟随 Windows 主显示器或使用固定显示器，并从 Windows 已安装应用列表或运行中的应用创建保持尺寸、最大化、左半屏或右半屏规则。MoniHop 只处理可识别的普通顶层应用窗口，包括保留标准窗口边框的自绘标题栏窗口；菜单、截图遮罩、工具窗口和子窗口不会独立投放。固定尺寸窗口会自动使用“保持尺寸”，不会被最大化或半屏布局强制拉伸；目标显示器缺失时本次回退到 Windows 主显示器，原配置保持不变。Windows 不提供外部工具在第三方窗口创建前指定目标显示器的通用接口，MoniHop 会在窗口首次可识别时立即移动，以尽量减少先出现在原屏幕上的时间。
+主动投放功能默认关闭，只有用户启用后才会接管相应窗口行为。
 
-顶部窗口投放层默认关闭。开启后，拖动普通顶层窗口会显示单一顶部投放口；进入投放口后展开紧凑命令条，可使用默认目标与默认布局，或为本次投放覆盖目标显示器以及保持尺寸、最大化、左半屏、右半屏布局。四种布局以图形入口呈现，悬停时显示名称。“保持尺寸”会保留拖动开始时的窗口尺寸和相对位置；目标工作区无法容纳时按原比例缩小，使窗口完整可见。该界面是 MoniHop 的独立投放层，不嵌入或扩展 Windows Snap Layout；单屏或普通权限无法移动高权限窗口时不会强制改动窗口。
-
-默认快捷键：
-
-- 鼠标切到下一屏：`Ctrl + Alt + M`
-- 当前窗口移到上一屏：`Ctrl + Alt + Shift + Left`
-- 当前窗口移到下一屏：`Ctrl + Alt + Shift + Right`
-
-快捷键页集中列出鼠标、窗口、快捷投放、恢复与程序动作，全部动作支持真实执行、重新录入、清除、冲突提示和恢复默认。仅三项高频动作提供默认组合，其余动作默认未设置，不会占用系统快捷键。每块已记录显示器会生成基于稳定设备标识的独立投放动作；显示器断开后绑定仍保留并显示“目标未连接”，重连后自动恢复。
-
-快捷投放既可以直接使用默认目标与默认布局，也可以打开键盘可操作的选择面板，临时选择显示器以及保持尺寸、最大化、左半屏或右半屏。屏幕外窗口召回只处理当前虚拟桌面上与所有显示器工作区完全无交集的普通窗口；权限不足或窗口状态不允许时保留原状态。
-
-## 环境
+## 系统要求
 
 - Windows 11
-- .NET SDK 10.0.302 或兼容的 10.0 最新补丁版本
+- 从源码构建需要 [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 
-## 构建
+MoniHop 默认以当前用户的普通权限运行。Windows 不允许普通权限进程移动更高权限窗口；遇到这种情况时，MoniHop 会保留窗口原状态。
 
-```powershell
-& 'C:\Program Files\dotnet\dotnet.exe' build MoniHop.sln
-```
-
-## 测试
+## 从源码运行
 
 ```powershell
-& 'C:\Program Files\dotnet\dotnet.exe' test MoniHop.sln
+git clone https://github.com/ginsrc/monihop.git
+cd monihop
+dotnet restore MoniHop.sln
+dotnet build MoniHop.sln
+dotnet run --project src/MoniHop.Desktop/MoniHop.Desktop.csproj
 ```
 
-## 运行
+运行测试：
 
 ```powershell
-& 'C:\Program Files\dotnet\dotnet.exe' run --project src/MoniHop.Desktop/MoniHop.Desktop.csproj
+dotnet test MoniHop.sln
 ```
 
-## 文档
+## 基本使用
 
-公开文档位于 [`docs/public/`](docs/public/README.md)。
+1. 打开“显示器”页面，确认系统已识别当前显示器。
+2. 在“快捷键”页面查看、修改或清除全局快捷键。
+3. 如需拖拽投放，在“窗口投放”页面启用顶部投放层并设置默认目标与布局。
+4. 如需自动分配新窗口，在“应用投放”页面启用功能并添加应用规则。
+5. 通过“通用设置”配置关闭行为、托盘、开机启动、鼠标落点、主题和语言。
 
-## 隐私边界
+### 默认快捷键
 
-MoniHop 采用本地优先设计。第一版不依赖云服务，不读取窗口内容、键盘输入、剪贴板或用户文件。
+| 操作 | 快捷键 |
+| --- | --- |
+| 鼠标切到下一屏 | `Ctrl + Alt + M` |
+| 当前窗口移到上一屏 | `Ctrl + Alt + Shift + Left` |
+| 当前窗口移到下一屏 | `Ctrl + Alt + Shift + Right` |
 
-应用投放设置保存在 `%LOCALAPPDATA%\MoniHop\config\application-projection.json`，窗口投放层设置保存在 `%LOCALAPPDATA%\MoniHop\config\window-projection.json`，快捷键设置保存在 `%LOCALAPPDATA%\MoniHop\config\hotkeys.json`。普通权限无法移动更高权限窗口时，MoniHop 保留窗口原状态，不要求管理员常驻。
+其他动作默认不分配快捷键，不会占用系统按键组合。
+
+## 行为边界
+
+- 应用投放只处理可识别的普通顶层窗口，不独立处理菜单、工具窗口、截图遮罩或子窗口。
+- Windows 没有供第三方工具在任意窗口创建前指定显示器的通用接口。MoniHop 会在窗口可识别后尽快移动，因此个别应用可能短暂出现在原显示器。
+- 固定尺寸窗口不会被强制最大化或拉伸；不支持的布局会自动降级为“保持尺寸”。
+- 目标显示器断开时会保留原规则，并在设备重新连接后自动匹配。
+- 顶部投放层是 MoniHop 的独立界面，不嵌入或修改 Windows Snap Layout。
+
+## 数据与隐私
+
+MoniHop 不依赖云服务，不读取窗口内容、键盘输入、剪贴板或用户文件，也不会自动上传配置或诊断数据。
+
+| 数据 | 默认位置 |
+| --- | --- |
+| 配置与显示器记录 | `%LOCALAPPDATA%\MoniHop\config` |
+| 本地诊断 | `%LOCALAPPDATA%\MoniHop\diagnostics` |
+
+关键失败类别只保存在本机；详细诊断需要用户主动开启。单个日志文件上限为 1 MB。损坏的 JSON 配置会先保留为带时间戳的 `.corrupt-...json` 文件，再恢复默认设置。
+
+## 项目结构
+
+```text
+src/MoniHop.Core/            平台无关的规则与模型
+src/MoniHop.Windows/         Windows 与 Win32 适配
+src/MoniHop.Desktop/         WPF 桌面应用
+tests/                       自动化测试
+docs/public/                 公开文档
+```
+
+## 参与贡献
+
+欢迎提交 Issue 和 Pull Request。提交问题时，请提供 Windows 版本、显示器连接方式、复现步骤和实际表现；请勿附带包含个人路径、窗口标题或其他敏感信息的诊断内容。
+
+- [问题反馈](https://github.com/ginsrc/monihop/issues)
+- [版本发布](https://github.com/ginsrc/monihop/releases)
+
+## 许可证
+
+MoniHop 使用 [MIT License](LICENSE)，Copyright (c) 2026 ginsrc。

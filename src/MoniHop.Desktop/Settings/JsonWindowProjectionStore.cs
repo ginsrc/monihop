@@ -40,6 +40,7 @@ public sealed class JsonWindowProjectionStore : IWindowProjectionStore
         }
         catch (Exception exception) when (exception is JsonException or ArgumentException)
         {
+            JsonStoreRecovery.QuarantineCorruptFile(FilePath);
             return WindowProjectionSettings.Default;
         }
     }

@@ -12,7 +12,7 @@
             <RowDefinition Height="18" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock FontSize="19" FontWeight="SemiBold" Text="选择运行中的应用" />
+        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="选择运行中的应用" />
         <TextBlock Grid.Row="1" Margin="0,6,0,0" Style="{StaticResource SecondaryTextStyle}"
                    Text="仅显示可稳定识别且可移动的普通顶层窗口。" />
         <ListBox x:Name="ApplicationsList" Grid.Row="3" ItemsSource="{Binding Applications}"

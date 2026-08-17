@@ -42,6 +42,7 @@ public sealed class JsonHotKeyStore : IHotKeyStore
         }
         catch (Exception exception) when (exception is JsonException or ArgumentException)
         {
+            JsonStoreRecovery.QuarantineCorruptFile(FilePath);
             return HotKeySettings.CreateDefaults();
         }
     }

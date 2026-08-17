@@ -1,4 +1,5 @@
 using MoniHop.Core.Displays;
+using MoniHop.Core.Cursors;
 using MoniHop.Core.Windows;
 using MoniHop.Windows.Cursors;
 
@@ -41,6 +42,21 @@ public sealed class CursorSwitchServiceTests
 
         Assert.Equal(CursorSwitchResult.Moved, result);
         Assert.Equal(new PixelPoint(50, 50), cursor.LastSetPosition);
+    }
+
+    [Fact]
+    public void SwitchNext_UsesConfiguredCenterLandingMode()
+    {
+        var cursor = new RecordingCursorController(new PixelPoint(25, 25));
+        var service = new CursorSwitchService(
+            new StubDisplayCatalog(TwoDisplays()),
+            cursor,
+            landingMode: () => CursorLandingMode.Center);
+
+        var result = service.SwitchNext();
+
+        Assert.Equal(CursorSwitchResult.Moved, result);
+        Assert.Equal(new PixelPoint(150, 50), cursor.LastSetPosition);
     }
 
     [Fact]

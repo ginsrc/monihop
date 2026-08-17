@@ -1,0 +1,28 @@
+<Window x:Class="MoniHop.Desktop.Views.CloseBehaviorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource String.CloseDialog.Title}"
+        Width="470" SizeToContent="Height" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="{DynamicResource String.CloseDialog.Heading}" />
+        <TextBlock Grid.Row="1" Margin="0,10,0,0" TextWrapping="Wrap"
+                   Style="{StaticResource SecondaryTextStyle}"
+                   Text="{DynamicResource String.CloseDialog.Description}" />
+        <CheckBox x:Name="RememberChoiceCheckBox" Grid.Row="2" Margin="0,18,0,0"
+                  Content="{DynamicResource String.CloseDialog.Remember}" />
+        <StackPanel Grid.Row="3" Margin="0,22,0,0" HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button x:Name="ExitButton" MinWidth="108" Style="{StaticResource SecondaryButtonStyle}"
+                    Content="{DynamicResource String.CloseDialog.Exit}" Click="ExitButton_OnClick" />
+            <Button x:Name="MinimizeButton" MinWidth="128" Margin="10,0,0,0"
+                    IsDefault="True" Style="{StaticResource PrimaryButtonStyle}"
+                    Content="{DynamicResource String.CloseDialog.Tray}" Click="MinimizeButton_OnClick" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -57,6 +57,55 @@ public sealed class DisplayProfileServiceTests
     }
 
     [Fact]
+    public void Refresh_WhenDisplayTopologyHasNotChanged_DoesNotSaveOrPublishAgain()
+    {
+        var catalog = new MutableDisplayCatalog(Display("DISPLAY1", "stable-a"));
+        var store = new MemoryDisplayProfileStore();
+        var service = new DisplayProfileService(catalog, store);
+        service.Refresh();
+        var changedCount = 0;
+        service.Changed += (_, _) => changedCount++;
+
+        service.Refresh();
+
+        Assert.Equal(1, store.SaveCount);
+        Assert.Equal(0, changedCount);
+    }
+
+    [Fact]
+    public void Rename_PublishesProfileChangeWithoutTopologyChange()
+    {
+        var service = new DisplayProfileService(
+            new MutableDisplayCatalog(Display("DISPLAY1", "stable-a")),
+            new MemoryDisplayProfileStore());
+        service.Refresh();
+        var topologyChanged = 0;
+        var profilesChanged = 0;
+        service.TopologyChanged += (_, _) => topologyChanged++;
+        service.ProfilesChanged += (_, _) => profilesChanged++;
+
+        service.Rename("stable-a", "Work screen");
+
+        Assert.Equal(0, topologyChanged);
+        Assert.Equal(1, profilesChanged);
+    }
+
+    [Fact]
+    public void Refresh_WhenOnlyDisplayMetadataChanges_DoesNotRequestWindowRecall()
+    {
+        var catalog = new MutableDisplayCatalog(Display("DISPLAY1", "stable-a"));
+        var service = new DisplayProfileService(catalog, new MemoryDisplayProfileStore());
+        service.Refresh();
+        var topologyChanged = 0;
+        service.TopologyChanged += (_, _) => topologyChanged++;
+        catalog.Displays = [Display("DISPLAY1", "stable-a", refreshRateHz: 144)];
+
+        service.Refresh();
+
+        Assert.Equal(0, topologyChanged);
+    }
+
+    [Fact]
     public void Forget_RejectsConnectedDisplayAndRemovesDisconnectedDisplay()
     {
         var catalog = new MutableDisplayCatalog(Display("DISPLAY1", "stable-a"));
@@ -74,14 +123,15 @@ public sealed class DisplayProfileServiceTests
         Assert.Empty(store.Profiles);
     }
 
-    private static DisplaySnapshot Display(string deviceName, string stableId) =>
+    private static DisplaySnapshot Display(string deviceName, string stableId, int? refreshRateHz = null) =>
         new(
             deviceName,
             deviceName,
             new PixelRect(0, 0, 1920, 1080),
             new PixelRect(0, 0, 1920, 1040),
             deviceName.EndsWith('1'),
-            stableId);
+            stableId,
+            refreshRateHz);
 
     private sealed class MutableDisplayCatalog(params DisplaySnapshot[] displays) : IDisplayCatalog
     {
@@ -96,9 +146,14 @@ public sealed class DisplayProfileServiceTests
 
         public IReadOnlyList<DisplayProfile> Profiles { get; private set; } = [];
 
+        public int SaveCount { get; private set; }
+
         public IReadOnlyList<DisplayProfile> Load() => Profiles;
 
-        public void Save(IReadOnlyList<DisplayProfile> profiles) =>
+        public void Save(IReadOnlyList<DisplayProfile> profiles)
+        {
+            SaveCount++;
             Profiles = profiles.ToArray();
+        }
     }
 }

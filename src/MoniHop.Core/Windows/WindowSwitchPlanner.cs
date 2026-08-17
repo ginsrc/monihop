@@ -42,8 +42,15 @@ public sealed class WindowSwitchPlanner
         var relativeY = (double)(normalRect.Top - source.Top) / source.Height;
         var mappedLeft = target.Left + (int)Math.Floor(relativeX * target.Width);
         var mappedTop = target.Top + (int)Math.Floor(relativeY * target.Height);
-        var maxLeft = Math.Max(target.Left, target.Right - normalRect.Width);
-        var maxTop = Math.Max(target.Top, target.Bottom - normalRect.Height);
+        var scale = Math.Min(
+            1d,
+            Math.Min(
+                (double)target.Width / normalRect.Width,
+                (double)target.Height / normalRect.Height));
+        var targetWidth = Math.Max(1, (int)Math.Floor(normalRect.Width * scale));
+        var targetHeight = Math.Max(1, (int)Math.Floor(normalRect.Height * scale));
+        var maxLeft = Math.Max(target.Left, target.Right - targetWidth);
+        var maxTop = Math.Max(target.Top, target.Bottom - targetHeight);
         var clampedLeft = Math.Clamp(mappedLeft, target.Left, maxLeft);
         var clampedTop = Math.Clamp(mappedTop, target.Top, maxTop);
 
@@ -52,7 +59,7 @@ public sealed class WindowSwitchPlanner
             new PixelRect(
                 clampedLeft,
                 clampedTop,
-                clampedLeft + normalRect.Width,
-                clampedTop + normalRect.Height));
+                clampedLeft + targetWidth,
+                clampedTop + targetHeight));
     }
 }

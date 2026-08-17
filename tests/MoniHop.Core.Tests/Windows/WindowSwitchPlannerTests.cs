@@ -59,7 +59,7 @@ public sealed class WindowSwitchPlannerTests
             DisplayDirection.Next);
 
         Assert.NotNull(result);
-        Assert.Equal(new PixelRect(0, 0, 150, 150), result.Value.TargetNormalRect);
+        Assert.Equal(new PixelRect(0, 0, 100, 100), result.Value.TargetNormalRect);
     }
 
     [Fact]

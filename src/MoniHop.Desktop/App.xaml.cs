@@ -1,11 +1,20 @@
+using System.Net.Http;
 using System.Windows;
+using System.Windows.Interop;
 using MoniHop.Desktop.ApplicationProjection;
+using MoniHop.Desktop.Diagnostics;
 using MoniHop.Desktop.HotKeys;
+using MoniHop.Desktop.Lifecycle;
+using MoniHop.Desktop.Localization;
 using MoniHop.Desktop.Settings;
+using MoniHop.Desktop.Theming;
+using MoniHop.Desktop.Updates;
 using MoniHop.Desktop.WindowProjection;
 using MoniHop.Windows.ApplicationProjection;
 using MoniHop.Windows.Cursors;
 using MoniHop.Windows.Displays;
+using MoniHop.Windows.Security;
+using MoniHop.Windows.Startup;
 using MoniHop.Windows.Windows;
 using MoniHop.Windows.WindowProjection;
 
@@ -13,22 +22,67 @@ namespace MoniHop.Desktop;
 
 public partial class App : Application
 {
+    private SingleInstanceCoordinator? _singleInstance;
+    private HttpClient? _httpClient;
+    private LocalDiagnosticService? _diagnostics;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
+        GeneralSettingsService? generalSettings = null;
         try
         {
+            var paths = MoniHopPaths.CreateDefault();
+            _diagnostics = new LocalDiagnosticService(
+                paths.DiagnosticLogFile,
+                () => generalSettings?.Current.DetailedDiagnosticsEnabled == true);
             var displayCatalog = new NativeDisplayCatalog();
             var displays = displayCatalog.ReadAll();
-            var paths = MoniHopPaths.CreateDefault();
+            generalSettings = new GeneralSettingsService(
+                new JsonGeneralSettingsStore(paths.GeneralSettingsFile));
+            var localization = new LocalizationService();
+            localization.Apply(generalSettings.Current.Language);
+            var theme = new ThemeService();
+            theme.Apply(generalSettings.Current.Theme);
+            var elevation = new NativeProcessElevationService();
+            var executablePath = Environment.ProcessPath
+                ?? throw new InvalidOperationException("Executable path is unavailable.");
+            if (StartupLaunchPolicy.Decide(
+                    generalSettings.Current.AlwaysRunAsAdministrator,
+                    elevation.IsElevated) == StartupLaunchAction.RestartElevatedBeforeSingleInstance)
+            {
+                var restart = elevation.RestartElevated(executablePath, e.Args);
+                if (restart == ElevationRestartResult.Started)
+                {
+                    Shutdown();
+                    return;
+                }
+            }
+
+            var isElevationRestart = e.Args.Contains(
+                "--elevation-restart",
+                StringComparer.OrdinalIgnoreCase);
+            _singleInstance = new SingleInstanceCoordinator(
+                "MoniHop.Desktop.SingleInstance.v1",
+                isElevationRestart ? TimeSpan.FromSeconds(5) : null);
+            if (!_singleInstance.IsPrimary)
+            {
+                _singleInstance.SignalPrimaryAsync().GetAwaiter().GetResult();
+                Shutdown();
+                return;
+            }
+
+            var startup = new NativeStartupRegistrationService(
+                executablePath);
             var profileService = new DisplayProfileService(
                 displayCatalog,
                 new JsonDisplayProfileStore(paths.DisplayProfilesFile));
             profileService.Refresh();
             var cursorSwitchService = new CursorSwitchService(
                 displayCatalog,
-                new NativeCursorController());
+                new NativeCursorController(),
+                landingMode: () => generalSettings.Current.CursorLanding);
             var nativeWindowController = new NativeWindowController();
             var windowSwitchService = new WindowSwitchService(
                 displayCatalog,
@@ -46,19 +100,22 @@ public partial class App : Application
                 new JsonWindowProjectionStore(paths.WindowProjectionFile));
             var hotKeySettings = new HotKeySettingsService(
                 new JsonHotKeyStore(paths.HotKeysFile));
+            _httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+            var updateCheckService = new GitHubUpdateCheckService(_httpClient, ProductInfo.Version);
             var projectionShortcutService = new WindowProjectionShortcutService(
                 displayCatalog,
                 nativeWindowController,
                 applicationWindowController,
                 windowProjectionSettings);
+            var offscreenWindowRecallService = new OffscreenWindowRecallService(
+                displayCatalog,
+                applicationWindowController,
+                new NativeVirtualDesktopWindowFilter());
             var hotKeyExecutor = new HotKeyActionExecutor(
                 cursorSwitchService,
                 windowSwitchService,
                 projectionShortcutService,
-                new OffscreenWindowRecallService(
-                    displayCatalog,
-                    applicationWindowController,
-                    new NativeVirtualDesktopWindowFilter()),
+                offscreenWindowRecallService,
                 applicationProjectionSettings);
             var windowProjectionRuntime = new WindowProjectionRuntime(
                 new NativeWindowMoveSizeEventSource(),
@@ -69,7 +126,7 @@ public partial class App : Application
                 windowProjectionSettings,
                 displayProfileService: profileService);
 
-            new MainWindow(
+            var mainWindow = new MainWindow(
                 displays,
                 hotKeyExecutor,
                 profileService,
@@ -80,16 +137,50 @@ public partial class App : Application
                 windowProjectionSettings,
                 windowProjectionRuntime,
                 hotKeySettings,
-                paths).Show();
+                generalSettings,
+                startup,
+                elevation,
+                theme,
+                localization,
+                offscreenWindowRecallService,
+                updateCheckService,
+                _diagnostics,
+                paths);
+            MainWindow = mainWindow;
+            _singleInstance.ShowRequested += (_, _) =>
+                Dispatcher.Invoke(mainWindow.ShowAndActivate);
+            _ = new WindowInteropHelper(mainWindow).EnsureHandle();
+            if (!e.Args.Contains("--background", StringComparer.OrdinalIgnoreCase))
+            {
+                mainWindow.Show();
+            }
+
+            _diagnostics.Write("startup.ready", "MoniHop started successfully.");
+            if (JsonStoreRecovery.RecoveryCount > 0)
+            {
+                _diagnostics.Write(
+                    "configuration.recovered",
+                    $"RecoveredFileCount={JsonStoreRecovery.RecoveryCount}",
+                    always: true);
+            }
         }
         catch (Exception exception)
         {
+            _diagnostics?.Write("startup.failed", exception.GetType().Name, always: true);
             MessageBox.Show(
-                $"无法读取显示器信息。\n\n{exception.Message}",
+                $"MoniHop 启动失败。\n\n{exception.Message}",
                 "MoniHop",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
             Shutdown(1);
         }
+    }
+
+    protected override void OnExit(ExitEventArgs e)
+    {
+        _diagnostics?.Write("shutdown", "MoniHop is exiting.");
+        _httpClient?.Dispose();
+        _singleInstance?.Dispose();
+        base.OnExit(e);
     }
 }
