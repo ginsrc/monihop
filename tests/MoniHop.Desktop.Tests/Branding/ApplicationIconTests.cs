@@ -69,6 +69,19 @@ public sealed class ApplicationIconTests
     }
 
     [Fact]
+    public void DesktopProject_PublishesProductExecutableName()
+    {
+        var projectPath = Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "MoniHop.Desktop",
+            "MoniHop.Desktop.csproj");
+        var project = XDocument.Load(projectPath);
+
+        Assert.Equal("MoniHop", project.Descendants("AssemblyName").Single().Value);
+    }
+
+    [Fact]
     public void MainWindow_UsesTitleBarOptimizedIcon()
     {
         var windowPath = Path.Combine(
