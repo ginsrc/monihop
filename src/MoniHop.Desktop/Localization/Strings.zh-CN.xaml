@@ -71,7 +71,7 @@
     <sys:String x:Key="String.About.Update.Check">检查更新</sys:String>
     <sys:String x:Key="String.About.Update.Automatic">启动时自动检查</sys:String>
     <sys:String x:Key="String.About.Update.AutomaticDescription">每次启动最多发起一次版本查询，默认关闭。</sys:String>
-    <sys:String x:Key="String.About.Update.SecurityNote">当前仅提供版本检查和发布页入口，不自动下载或安装未签名程序。</sys:String>
+    <sys:String x:Key="String.About.Update.SecurityNote">安装版会下载对应安装包并校验 SHA-256，校验通过后打开可见安装程序；便携版仍前往发布页。</sys:String>
     <sys:String x:Key="String.About.Update.NotChecked">尚未检查更新</sys:String>
     <sys:String x:Key="String.About.Update.Checking">正在检查 GitHub Releases…</sys:String>
     <sys:String x:Key="String.About.Update.Available">发现新版本 {0}</sys:String>
@@ -79,6 +79,11 @@
     <sys:String x:Key="String.About.Update.NoRelease">项目暂未发布 GitHub Release</sys:String>
     <sys:String x:Key="String.About.Update.Failed">暂时无法检查更新，请稍后重试</sys:String>
     <sys:String x:Key="String.About.Update.OpenRelease">查看新版本</sys:String>
+    <sys:String x:Key="String.About.Update.DownloadInstall">下载并安装</sys:String>
+    <sys:String x:Key="String.About.Update.Installing">正在下载安装包并校验完整性…</sys:String>
+    <sys:String x:Key="String.About.Update.InstallFailed">更新下载失败，请检查网络后重试。</sys:String>
+    <sys:String x:Key="String.About.Update.ChecksumFailed">安装包完整性校验失败，已阻止运行。</sys:String>
+    <sys:String x:Key="String.About.Update.LaunchFailed">安装程序无法启动，请前往发布页手动下载。</sys:String>
     <sys:String x:Key="String.About.Diagnostics.Section">运行信息与本地诊断</sys:String>
     <sys:String x:Key="String.About.Diagnostics.Description">诊断数据仅保存在本机，不记录窗口标题、窗口内容、键盘输入、剪贴板或用户文件。</sys:String>
     <sys:String x:Key="String.About.Diagnostics.Windows">Windows</sys:String>
