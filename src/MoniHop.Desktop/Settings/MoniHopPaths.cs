@@ -11,12 +11,26 @@ public sealed record MoniHopPaths(
     string WindowProjectionFile,
     string HotKeysFile,
     string GeneralSettingsFile,
-    string DiagnosticLogFile)
+    string DiagnosticLogFile,
+    bool IsPortable)
 {
-    public static MoniHopPaths CreateDefault()
+    public const string PortableMarkerFileName = "portable.flag";
+
+    public static MoniHopPaths CreateDefault() =>
+        CreateForExecutableDirectory(AppContext.BaseDirectory);
+
+    public static MoniHopPaths CreateForExecutableDirectory(string executableDirectory)
     {
-        var localData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        var dataDirectory = Path.Combine(localData, "MoniHop");
+        ArgumentException.ThrowIfNullOrWhiteSpace(executableDirectory);
+        var normalizedExecutableDirectory = Path.GetFullPath(executableDirectory);
+        var isPortable = File.Exists(Path.Combine(
+            normalizedExecutableDirectory,
+            PortableMarkerFileName));
+        var dataDirectory = isPortable
+            ? Path.Combine(normalizedExecutableDirectory, "data")
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "MoniHop");
         var configurationDirectory = Path.Combine(dataDirectory, "config");
         var diagnosticsDirectory = Path.Combine(dataDirectory, "diagnostics");
         return new MoniHopPaths(
@@ -28,6 +42,7 @@ public sealed record MoniHopPaths(
             Path.Combine(configurationDirectory, "window-projection.json"),
             Path.Combine(configurationDirectory, "hotkeys.json"),
             Path.Combine(configurationDirectory, "general.json"),
-            Path.Combine(diagnosticsDirectory, "monihop.log"));
+            Path.Combine(diagnosticsDirectory, "monihop.log"),
+            isPortable);
     }
 }
