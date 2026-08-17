@@ -30,6 +30,19 @@ MoniHop 是一款面向 Windows 11 多显示器环境的开源窗口调度工具
 
 MoniHop 默认以当前用户的普通权限运行。Windows 不允许普通权限进程移动更高权限窗口；遇到这种情况时，MoniHop 会保留窗口原状态。
 
+## 下载与安装
+
+正式版本提供两种 `win-x64` 发行形式，均已包含 .NET 运行时：
+
+- `MoniHop-<版本>-win-x64-setup.exe`：当前用户安装版，不需要管理员权限。
+- `MoniHop-<版本>-win-x64-portable.zip`：便携版，解压到可写目录后运行 `MoniHop.exe`。
+
+可使用发布页同时提供的 `SHA256SUMS.txt` 核对文件完整性：
+
+```powershell
+Get-FileHash .\MoniHop-1.0.0-win-x64-setup.exe -Algorithm SHA256
+```
+
 ## 从源码运行
 
 ```powershell
@@ -44,6 +57,12 @@ dotnet run --project src/MoniHop.Desktop/MoniHop.Desktop.csproj
 
 ```powershell
 dotnet test MoniHop.sln
+```
+
+生成安装版、便携版和 SHA-256 清单需要 Inno Setup 7：
+
+```powershell
+.\packaging\build-release.ps1
 ```
 
 ## 基本使用
@@ -76,10 +95,10 @@ dotnet test MoniHop.sln
 
 MoniHop 不依赖云服务，不读取窗口内容、键盘输入、剪贴板或用户文件，也不会自动上传配置或诊断数据。
 
-| 数据 | 默认位置 |
-| --- | --- |
-| 配置与显示器记录 | `%LOCALAPPDATA%\MoniHop\config` |
-| 本地诊断 | `%LOCALAPPDATA%\MoniHop\diagnostics` |
+| 运行方式 | 配置与显示器记录 | 本地诊断 |
+| --- | --- | --- |
+| 安装版 | `%LOCALAPPDATA%\MoniHop\config` | `%LOCALAPPDATA%\MoniHop\diagnostics` |
+| 便携版 | `<程序目录>\data\config` | `<程序目录>\data\diagnostics` |
 
 关键失败类别只保存在本机；详细诊断需要用户主动开启。单个日志文件上限为 1 MB。损坏的 JSON 配置会先保留为带时间戳的 `.corrupt-...json` 文件，再恢复默认设置。
 
@@ -90,6 +109,7 @@ src/MoniHop.Core/            平台无关的规则与模型
 src/MoniHop.Windows/         Windows 与 Win32 适配
 src/MoniHop.Desktop/         WPF 桌面应用
 tests/                       自动化测试
+packaging/                   安装与便携发行脚本
 docs/public/                 公开文档
 ```
 
