@@ -5,11 +5,41 @@ namespace MoniHop.Desktop.Models;
 
 public static class HotKeyGestureFormatter
 {
+    public static Key ResolveKey(
+        Key key,
+        Key systemKey,
+        Key imeProcessedKey,
+        Key deadCharProcessedKey,
+        uint originalImeVirtualKey = 0) => key switch
+        {
+            Key.System => systemKey,
+            Key.ImeProcessed when originalImeVirtualKey is > 0 and not 0xE5 =>
+                KeyInterop.KeyFromVirtualKey((int)originalImeVirtualKey),
+            Key.ImeProcessed => imeProcessedKey,
+            Key.DeadCharProcessed => deadCharProcessedKey,
+            _ => key,
+        };
+
+    public static bool TryCreate(
+        Key key,
+        ModifierKeys modifiers,
+        bool windowsKeyDown,
+        out HotKeyGesture gesture)
+    {
+        if (windowsKeyDown)
+        {
+            modifiers |= ModifierKeys.Windows;
+        }
+
+        return TryCreate(key, modifiers, out gesture);
+    }
+
     public static bool TryCreate(Key key, ModifierKeys modifiers, out HotKeyGesture gesture)
     {
         gesture = default;
         if (key is Key.LeftCtrl or Key.RightCtrl or Key.LeftAlt or Key.RightAlt or
-            Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin)
+            Key.LeftShift or Key.RightShift or Key.LWin or Key.RWin or
+            Key.System or Key.ImeProcessed or Key.DeadCharProcessed or Key.None)
         {
             return false;
         }
@@ -89,6 +119,7 @@ public static class HotKeyGestureFormatter
         Key.Space => "Space",
         Key.Enter => "Enter",
         Key.Tab => "Tab",
+        Key.Oem3 => "`",
         _ => key.ToString(),
     };
 }

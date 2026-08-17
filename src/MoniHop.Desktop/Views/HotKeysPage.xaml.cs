@@ -5,9 +5,11 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
+using System.Windows.Interop;
 using MoniHop.Desktop.Models;
 using MoniHop.Desktop.Notifications;
 using MoniHop.Desktop.Settings;
+using MoniHop.Windows.HotKeys;
 
 namespace MoniHop.Desktop.Views;
 
@@ -81,7 +83,15 @@ public partial class HotKeysPage : UserControl
         }
 
         e.Handled = true;
-        var key = e.Key == Key.System ? e.SystemKey : e.Key;
+        var originalImeVirtualKey = e.Key == Key.ImeProcessed
+            ? GetOriginalImeVirtualKey()
+            : 0;
+        var key = HotKeyGestureFormatter.ResolveKey(
+            e.Key,
+            e.SystemKey,
+            e.ImeProcessedKey,
+            e.DeadCharProcessedKey,
+            originalImeVirtualKey);
         if (key == Key.Escape)
         {
             CancelCapture();
@@ -100,13 +110,25 @@ public partial class HotKeysPage : UserControl
             return;
         }
 
-        if (!HotKeyGestureFormatter.TryCreate(key, Keyboard.Modifiers, out var gesture))
+        if (!HotKeyGestureFormatter.TryCreate(
+                key,
+                Keyboard.Modifiers,
+                WindowsLogoKeyState.IsPressed(),
+                out var gesture))
         {
             ShowNotice("快捷键必须包含 Ctrl、Alt、Shift 或 Win，并以非修饰键结束。", isError: true);
             return;
         }
 
         SaveBinding(model, definition, gesture);
+    }
+
+    private uint GetOriginalImeVirtualKey()
+    {
+        var window = Window.GetWindow(this);
+        return window is null
+            ? 0
+            : NativeImeKeyResolver.GetOriginalVirtualKey(new WindowInteropHelper(window).Handle);
     }
 
     private void SaveBinding(

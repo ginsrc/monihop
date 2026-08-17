@@ -27,4 +27,54 @@ public sealed class HotKeyGestureFormatterTests
             gesture);
         Assert.Equal("Ctrl + Alt + P", HotKeyGestureFormatter.Format(gesture));
     }
+
+    [Fact]
+    public void TryCreate_UsesPhysicalWindowsKeyStateForOemKey()
+    {
+        var created = HotKeyGestureFormatter.TryCreate(
+            Key.Oem3,
+            ModifierKeys.None,
+            windowsKeyDown: true,
+            out var gesture);
+
+        Assert.True(created);
+        Assert.Equal(
+            new HotKeyGesture(HotKeyModifiers.Windows, 0xC0),
+            gesture);
+        Assert.Equal("Win + `", HotKeyGestureFormatter.Format(gesture));
+    }
+
+    [Fact]
+    public void ResolveKey_UnwrapsImeProcessedKey()
+    {
+        var resolved = HotKeyGestureFormatter.ResolveKey(
+            Key.ImeProcessed,
+            Key.None,
+            Key.Oem3,
+            Key.None);
+
+        Assert.Equal(Key.Oem3, resolved);
+    }
+
+    [Fact]
+    public void ResolveKey_UsesOriginalVirtualKeyWhenImeHidesThePhysicalKey()
+    {
+        var resolved = HotKeyGestureFormatter.ResolveKey(
+            Key.ImeProcessed,
+            Key.None,
+            Key.ImeProcessed,
+            Key.None,
+            originalImeVirtualKey: 0xC0);
+
+        Assert.Equal(Key.Oem3, resolved);
+    }
+
+    [Fact]
+    public void TryCreate_RejectsImeWrapperKeys()
+    {
+        Assert.False(HotKeyGestureFormatter.TryCreate(
+            Key.ImeProcessed,
+            ModifierKeys.Windows,
+            out _));
+    }
 }
