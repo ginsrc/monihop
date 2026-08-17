@@ -29,7 +29,9 @@ public sealed class AboutPageXamlTests
                     "SurfaceSectionStyle",
                     StringComparison.Ordinal) == true));
         Assert.Contains("ProjectButton", names);
+        Assert.Contains("ReleasesButton", names);
         Assert.Contains("IssuesButton", names);
+        Assert.Contains("LicenseButton", names);
         Assert.Contains("AutomaticUpdateCheckToggle", names);
         Assert.Contains("CheckUpdatesButton", names);
         Assert.Contains("DetailedDiagnosticsToggle", names);

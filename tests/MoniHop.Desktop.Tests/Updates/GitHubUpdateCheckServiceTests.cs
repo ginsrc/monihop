@@ -8,6 +8,27 @@ namespace MoniHop.Desktop.Tests.Updates;
 public sealed class GitHubUpdateCheckServiceTests
 {
     [Fact]
+    public async Task CheckAsync_UsesThePublishedRepositoryReleasesEndpoint()
+    {
+        Uri? requestedUri = null;
+        using var client = new HttpClient(new StubHandler(request =>
+        {
+            requestedUri = request.RequestUri;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("[]", Encoding.UTF8, "application/json"),
+            };
+        }));
+        var service = new GitHubUpdateCheckService(client, "1.0.0");
+
+        await service.CheckAsync();
+
+        Assert.Equal(
+            new Uri("https://api.github.com/repos/ginsrc/monihop/releases?per_page=20"),
+            requestedUri);
+    }
+
+    [Fact]
     public async Task CheckAsync_LatestStableReleaseIsNewerThanMatchingAlpha()
     {
         var client = Client(HttpStatusCode.OK, """

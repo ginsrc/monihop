@@ -21,8 +21,7 @@ public sealed record UpdateCheckResult(
 
 public sealed class GitHubUpdateCheckService
 {
-    private static readonly Uri ReleasesUri = new(
-        "https://api.github.com/repos/ginsrc/monihop/releases?per_page=20");
+    private static readonly Uri ReleasesUri = new(ProductInfo.ReleasesApiUrl);
     private readonly HttpClient _client;
     private readonly string _currentVersion;
 
