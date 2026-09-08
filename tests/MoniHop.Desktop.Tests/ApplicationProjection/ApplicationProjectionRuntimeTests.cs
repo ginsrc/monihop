@@ -68,7 +68,7 @@ public sealed class ApplicationProjectionRuntimeTests
     }
 
     [Fact]
-    public async Task ShownEvent_DefaultTimingStartsReadingWithoutArtificialSettleDelay()
+    public async Task ShownEvent_DefaultTimingWaitsForSettleDelayBeforeReading()
     {
         var source = new StubEventSource();
         var controller = new RecordingController(Snapshot(42));
@@ -80,8 +80,12 @@ public sealed class ApplicationProjectionRuntimeTests
             new ApplicationProjectionSettingsService(store));
 
         source.Raise(new WindowEvent(WindowEventKind.Shown, 42));
-        await Task.Delay(100);
+        await Task.Delay(50);
 
+        // 尚未到达默认 200ms 窗口稳定去抖，不应开始读取。
+        Assert.Equal(0, controller.ReadCount);
+
+        await Task.Delay(300);
         Assert.True(controller.ReadCount > 0);
     }
 
