@@ -40,7 +40,7 @@ MoniHop 默认以当前用户的普通权限运行。Windows 不允许普通权�
 可使用发布页同时提供的 `SHA256SUMS.txt` 核对文件完整性：
 
 ```powershell
-Get-FileHash .\MoniHop-1.0.2-win-x64-setup.exe -Algorithm SHA256
+Get-FileHash .\MoniHop-1.0.3-win-x64-setup.exe -Algorithm SHA256
 ```
 
 安装版可在“关于与诊断”中下载新版本，校验发布页提供的 SHA-256 后打开安装程序；便携版会打开对应发布页，由用户选择发行文件。

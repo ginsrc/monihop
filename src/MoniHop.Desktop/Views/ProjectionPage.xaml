@@ -36,7 +36,7 @@
                                           Unchecked="EnabledToggle_OnChanged" />
                             </Grid>
 
-                            <Border Margin="0,18,0,16" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" />
+                            <Border Margin="0,18,0,16" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" />
                             <TextBlock Style="{StaticResource FieldLabelStyle}" Text="显示时机" />
                             <TextBlock Margin="0,4,0,10" Style="{StaticResource SecondaryTextStyle}"
                                        Text="拖动开始即显示投放口，可停留约 300ms 后展开，或进入后立即展开。" />
@@ -101,8 +101,8 @@
                             </Grid>
 
                             <Border Margin="0,16,0,0" Height="112"
-                                    Background="{StaticResource SurfaceSecondaryBrush}"
-                                    BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
+                                    Background="{DynamicResource SurfaceSecondaryBrush}"
+                                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
                                     CornerRadius="5" ClipToBounds="True">
                                 <Canvas x:Name="PositionCanvas"
                                         Background="Transparent"
@@ -127,7 +127,7 @@
                                             </Grid>
                                             <Border Width="24" Height="3" HorizontalAlignment="Center"
                                                     VerticalAlignment="Bottom" Margin="0,0,0,3"
-                                                    Background="{StaticResource BrandBrush}" CornerRadius="2" />
+                                                    Background="{DynamicResource BrandBrush}" CornerRadius="2" />
                                         </Grid>
                                     </Border>
                                 </Canvas>
@@ -156,7 +156,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <Border Grid.Row="0" Grid.Column="0" Padding="12,10"
-                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                        Background="{DynamicResource SurfaceSecondaryBrush}" CornerRadius="5">
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource CardTitleStyle}" Text="保持尺寸" />
                                         <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
@@ -164,7 +164,7 @@
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Row="0" Grid.Column="2" Padding="12,10"
-                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                        Background="{DynamicResource SurfaceSecondaryBrush}" CornerRadius="5">
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource CardTitleStyle}" Text="最大化" />
                                         <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
@@ -172,7 +172,7 @@
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Row="2" Grid.Column="0" Padding="12,10"
-                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                        Background="{DynamicResource SurfaceSecondaryBrush}" CornerRadius="5">
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource CardTitleStyle}" Text="左半屏" />
                                         <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
@@ -180,7 +180,7 @@
                                     </StackPanel>
                                 </Border>
                                 <Border Grid.Row="2" Grid.Column="2" Padding="12,10"
-                                        Background="{StaticResource SurfaceSecondaryBrush}" CornerRadius="5">
+                                        Background="{DynamicResource SurfaceSecondaryBrush}" CornerRadius="5">
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource CardTitleStyle}" Text="右半屏" />
                                         <TextBlock Margin="0,3,0,0" Style="{StaticResource SecondaryTextStyle}"
@@ -200,7 +200,7 @@
         <Border x:Name="ActionToast"
                 HorizontalAlignment="Right" VerticalAlignment="Bottom"
                 Margin="0,0,20,20" Padding="12,9"
-                Background="#FCFCFD" BorderBrush="{StaticResource BorderBrush}"
+                Background="{DynamicResource SurfaceSecondaryBrush}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="1" CornerRadius="5" Visibility="Collapsed">
             <StackPanel Orientation="Horizontal">
                 <Ellipse x:Name="ToastIndicator" Width="7" Height="7" VerticalAlignment="Center" />

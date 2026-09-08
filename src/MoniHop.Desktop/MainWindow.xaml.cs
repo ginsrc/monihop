@@ -340,6 +340,13 @@ public partial class MainWindow : Window
         {
             _diagnostics.Write("application.projection.failed", "Window move failed", always: true);
         }
+        else
+        {
+            _diagnostics.Write(
+                "application.projection.moved",
+                $"Window moved to display {result.TargetDisplayId}",
+                always: false);
+        }
 
         _applicationProjectionPage.ShowRuntimeResult(result);
     }

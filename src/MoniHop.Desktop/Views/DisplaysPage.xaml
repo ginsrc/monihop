@@ -20,8 +20,8 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <Border Width="206" Height="112" Margin="6" Padding="16"
-                                        Background="{StaticResource BrandSubtleBrush}"
-                                        BorderBrush="{StaticResource BrandBrush}" BorderThickness="1" CornerRadius="5">
+                                        Background="{DynamicResource BrandSubtleBrush}"
+                                        BorderBrush="{DynamicResource BrandBrush}" BorderThickness="1" CornerRadius="5">
                                     <StackPanel>
                                         <TextBlock Style="{StaticResource SectionTitleStyle}" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
                                         <TextBlock Margin="0,8,0,0" Text="{Binding ScreenLabel}" />
@@ -48,15 +48,15 @@
                         <Setter Property="MinHeight" Value="46" />
                         <Setter Property="Padding" Value="6,0" />
                         <Setter Property="VerticalContentAlignment" Value="Center" />
-                        <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
                         <Setter Property="BorderThickness" Value="0,0,0,1" />
-                        <Setter Property="Background" Value="{StaticResource SurfaceBrush}" />
+                        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
                         <Style.Triggers>
                             <Trigger Property="ItemsControl.AlternationIndex" Value="1">
-                                <Setter Property="Background" Value="#FAFBFC" />
+                                <Setter Property="Background" Value="{DynamicResource AlternateRowBrush}" />
                             </Trigger>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter Property="Background" Value="{StaticResource BrandSubtleBrush}" />
+                                <Setter Property="Background" Value="{DynamicResource BrandSubtleBrush}" />
                             </Trigger>
                         </Style.Triggers>
                     </Style>
@@ -71,7 +71,7 @@
                         <GridViewColumn Header="方向" Width="75" DisplayMemberBinding="{Binding Orientation}" />
                         <GridViewColumn Header="尺寸" Width="90"><GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding PhysicalSize}" ToolTip="{Binding PhysicalSizeDetail}" /></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                         <GridViewColumn Header="应用规则" Width="75" DisplayMemberBinding="{Binding ApplicationRules}" />
-                        <GridViewColumn Header="状态" Width="70"><GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ConnectionStatus}"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{StaticResource SuccessBrush}" /><Style.Triggers><DataTrigger Binding="{Binding IsConnected}" Value="False"><Setter Property="Foreground" Value="{StaticResource WarningBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                        <GridViewColumn Header="状态" Width="70"><GridViewColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding ConnectionStatus}"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" /><Style.Triggers><DataTrigger Binding="{Binding IsConnected}" Value="False"><Setter Property="Foreground" Value="{DynamicResource WarningBrush}" /></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                         <GridViewColumn Header="操作" Width="180"><GridViewColumn.CellTemplate><DataTemplate><StackPanel Orientation="Horizontal"><Button Content="重命名" Tag="{Binding}" Click="Rename_OnClick" Style="{StaticResource SecondaryButtonStyle}" /><Button Margin="6,0,0,0" Content="忘记" Tag="{Binding}" Click="Forget_OnClick" IsEnabled="{Binding IsConnected, Converter={StaticResource InverseBooleanConverter}}" Style="{StaticResource SecondaryButtonStyle}" ToolTip="仅删除 MoniHop 本地记录" /></StackPanel></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                     </GridView>
                 </ListView.View>

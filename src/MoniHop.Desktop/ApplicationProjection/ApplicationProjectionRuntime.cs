@@ -15,6 +15,7 @@ public sealed class ApplicationProjectionRuntime : IDisposable
     private readonly IDisplayCatalog _displayCatalog;
     private readonly ApplicationProjectionSettingsService _settingsService;
     private readonly ApplicationProjectionPlanner _planner = new();
+    private static readonly TimeSpan DefaultSettleDelay = TimeSpan.FromMilliseconds(200);
     private readonly TimeSpan _settleDelay;
     private readonly TimeSpan _retryDelay;
     private readonly Dictionary<nint, CancellationTokenSource> _pending = [];
@@ -33,7 +34,7 @@ public sealed class ApplicationProjectionRuntime : IDisposable
         _windowController = windowController ?? throw new ArgumentNullException(nameof(windowController));
         _displayCatalog = displayCatalog ?? throw new ArgumentNullException(nameof(displayCatalog));
         _settingsService = settingsService ?? throw new ArgumentNullException(nameof(settingsService));
-        _settleDelay = settleDelay ?? TimeSpan.Zero;
+        _settleDelay = settleDelay ?? DefaultSettleDelay;
         _retryDelay = retryDelay ?? TimeSpan.FromMilliseconds(120);
         _eventSource.WindowChanged += OnWindowChanged;
     }
