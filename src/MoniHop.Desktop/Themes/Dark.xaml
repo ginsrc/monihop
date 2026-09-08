@@ -5,6 +5,7 @@
     <SolidColorBrush x:Key="NavigationBackgroundBrush" Color="#202124" />
     <SolidColorBrush x:Key="SurfaceBrush" Color="#252629" />
     <SolidColorBrush x:Key="SurfaceSecondaryBrush" Color="#303136" />
+    <SolidColorBrush x:Key="AlternateRowBrush" Color="#1E1F22" />
     <SolidColorBrush x:Key="BorderBrush" Color="#44464D" />
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F2F3F5" />
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="#B5B8C0" />

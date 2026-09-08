@@ -14,6 +14,7 @@
 
     <Style x:Key="BodyTextStyle" TargetType="TextBlock">
         <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
     </Style>
 
     <Style x:Key="BrandTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource BodyTextStyle}">
@@ -104,6 +105,7 @@
 
     <Style x:Key="NavigationItemStyle" TargetType="ListBoxItem">
         <Setter Property="Margin" Value="0,2" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Padding" Value="14,0,10,0" />
         <Setter Property="FocusVisualStyle" Value="{x:Null}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -179,6 +181,7 @@
     <Style TargetType="ComboBoxItem">
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="Padding" Value="12,8" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
             <Setter.Value>
@@ -207,6 +210,7 @@
     <Style TargetType="ComboBox">
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="Padding" Value="12,7" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -374,6 +378,7 @@
         <Setter Property="Height" Value="38" />
         <Setter Property="Padding" Value="8,0" />
         <Setter Property="Background" Value="{DynamicResource SurfaceSecondaryBrush}" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
